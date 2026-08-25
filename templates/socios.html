@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Socios - Sistema de Tickets</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem 2rem;
+            background: var(--bg-card);
+            border-radius: 15px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 2rem;
+        }
+
+        .form-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            height: fit-content;
+        }
+
+        .form-section h2 {
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .list-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .list-header h2 {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+        }
+
+        .search-box input {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            width: 250px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .socios-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .socios-table th {
+            text-align: left;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .socios-table th:first-child {
+            border-radius: 10px 0 0 10px;
+        }
+
+        .socios-table th:last-child {
+            border-radius: 0 10px 10px 0;
+        }
+
+        .socios-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .socios-table tr:hover td {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .btn-action {
+            padding: 0.5rem 0.75rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            margin-right: 0.5rem;
+        }
+
+        .btn-edit {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--info);
+        }
+
+        .btn-edit:hover {
+            background: rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .btn-delete:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .badge-activo {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        .badge-inactivo {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .search-box input {
+                width: 150px;
+            }
+
+            .socios-table {
+                font-size: 0.85rem;
+            }
+
+            .socios-table th,
+            .socios-table td {
+                padding: 0.75rem 0.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📋 Gestión de Socios</h1>
+            <a href="/admin" class="btn-back">
+                ← Volver al Panel
+            </a>
+        </header>
+
+        <main class="main-grid">
+            <section class="form-section">
+                <h2 id="formTitle">➕ Nuevo Socio</h2>
+                <form id="socioForm">
+                    <input type="hidden" id="socioId" value="">
+
+                    <div class="form-group">
+                        <label for="numero_socio">N° de Socio</label>
+                        <input type="text" id="numero_socio" placeholder="Ej: 1042">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dni">Documento / Cédula *</label>
+                        <input type="text" id="dni" placeholder="Ej: 4258963" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="apellido">Apellido *</label>
+                        <input type="text" id="apellido" placeholder="Apellido del socio" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nombre">Nombre *</label>
+                        <input type="text" id="nombre" placeholder="Nombre del socio" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="text" id="telefono" placeholder="Ej: 3816123456">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" placeholder="correo@ejemplo.com">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="limpiarFormulario()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="list-section">
+                <div class="list-header">
+                    <h2>📑 Listado de Socios</h2>
+                    <div class="search-box">
+                        <span>🔍</span>
+                        <input type="text" id="searchInput" placeholder="Buscar por N° de socio, documento o nombre...">
+                    </div>
+                </div>
+
+                <div id="sociosContainer">
+                    <table class="socios-table">
+                        <thead>
+                            <tr>
+                                <th>N° Socio</th>
+                                <th>Documento</th>
+                                <th>Apellido y Nombre</th>
+                                <th>Teléfono</th>
+                                <th>Email</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sociosTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        let socios = [];
+
+        // Cargar socios al iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarSocios();
+        });
+
+        // Evento de búsqueda
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            filtrarSocios(e.target.value);
+        });
+
+        // Evento de formulario
+        document.getElementById('socioForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await guardarSocio();
+        });
+
+        async function cargarSocios() {
+            try {
+                const response = await fetch('/api/socios');
+                socios = await response.json();
+                renderizarSocios(socios);
+            } catch (error) {
+                console.error('Error al cargar socios:', error);
+                mostrarToast('Error al cargar socios', 'error');
+            }
+        }
+
+        function renderizarSocios(lista) {
+            const tbody = document.getElementById('sociosTableBody');
+
+            if (lista.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="icon">👥</div>
+                                <p>No hay socios registrados</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = lista.map(socio => `
+                <tr>
+                    <td><strong>${socio.numero_socio || '-'}</strong></td>
+                    <td>${socio.dni}</td>
+                    <td>${socio.nombre_completo}</td>
+                    <td>${socio.telefono || '-'}</td>
+                    <td>${socio.email || '-'}</td>
+                    <td>
+                        <span class="badge-${socio.activo ? 'activo' : 'inactivo'}">
+                            ${socio.activo ? 'Activo' : 'Inactivo'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn-action btn-edit" onclick="editarSocio(${socio.id})">✏️</button>
+                        <button class="btn-action btn-delete" onclick="eliminarSocio(${socio.id})">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filtrarSocios(texto) {
+            const textoLower = texto.toLowerCase();
+            const filtrados = socios.filter(s =>
+                s.dni.toLowerCase().includes(textoLower) ||
+                (s.numero_socio || '').toLowerCase().includes(textoLower) ||
+                s.nombre.toLowerCase().includes(textoLower) ||
+                s.apellido.toLowerCase().includes(textoLower)
+            );
+            renderizarSocios(filtrados);
+        }
+
+        async function guardarSocio() {
+            const id = document.getElementById('socioId').value;
+            const data = {
+                numero_socio: document.getElementById('numero_socio').value.trim(),
+                dni: document.getElementById('dni').value.trim(),
+                nombre: document.getElementById('nombre').value.trim(),
+                apellido: document.getElementById('apellido').value.trim(),
+                telefono: document.getElementById('telefono').value.trim() || null,
+                email: document.getElementById('email').value.trim() || null
+            };
+
+            try {
+                const url = id ? `/api/socios/${id}` : '/api/socios';
+                const method = id ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Error al guardar');
+                }
+
+                mostrarToast(id ? 'Socio actualizado' : 'Socio creado', 'success');
+                limpiarFormulario();
+                cargarSocios();
+            } catch (error) {
+                mostrarToast(error.message, 'error');
+            }
+        }
+
+        function editarSocio(id) {
+            const socio = socios.find(s => s.id === id);
+            if (!socio) return;
+
+            document.getElementById('socioId').value = socio.id;
+            document.getElementById('numero_socio').value = socio.numero_socio || '';
+            document.getElementById('dni').value = socio.dni;
+            document.getElementById('nombre').value = socio.nombre;
+            document.getElementById('apellido').value = socio.apellido;
+            document.getElementById('telefono').value = socio.telefono || '';
+            document.getElementById('email').value = socio.email || '';
+
+            document.getElementById('formTitle').textContent = '✏️ Editar Socio';
+            document.getElementById('dni').focus();
+        }
+
+        async function eliminarSocio(id) {
+            if (!confirm('¿Estás seguro de eliminar este socio?')) return;
+
+            try {
+                const response = await fetch(`/api/socios/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al eliminar');
+                }
+
+                mostrarToast('Socio eliminado', 'success');
+                cargarSocios();
+            } catch (error) {
+                mostrarToast(error.message, 'error');
+            }
+        }
+
+        function limpiarFormulario() {
+            document.getElementById('socioForm').reset();
+            document.getElementById('socioId').value = '';
+            document.getElementById('formTitle').textContent = '➕ Nuevo Socio';
+        }
+
+        function mostrarToast(mensaje, tipo) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            toast.textContent = mensaje;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>

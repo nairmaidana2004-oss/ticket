@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Sistema de Tickets</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .admin-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .admin-header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .nav-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .nav-card.tv {
+            border-color: rgba(239, 68, 68, 0.5);
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(239, 68, 68, 0.1) 100%);
+        }
+
+        .nav-card.tv:hover {
+            border-color: var(--danger);
+            box-shadow: 0 20px 40px rgba(239, 68, 68, 0.3);
+        }
+
+        .nav-card.operador {
+            border-color: rgba(16, 185, 129, 0.5);
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(16, 185, 129, 0.1) 100%);
+        }
+
+        .nav-card.operador:hover {
+            border-color: var(--success);
+            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.3);
+        }
+
+        .nav-card.socio {
+            border-color: rgba(59, 130, 246, 0.5);
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(59, 130, 246, 0.1) 100%);
+        }
+
+        .nav-card.socio:hover {
+            border-color: var(--info);
+            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3);
+        }
+
+        .nav-card.socios-gestion {
+            border-color: rgba(245, 158, 11, 0.5);
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(245, 158, 11, 0.1) 100%);
+        }
+
+        .nav-card.socios-gestion:hover {
+            border-color: var(--warning);
+            box-shadow: 0 20px 40px rgba(245, 158, 11, 0.3);
+        }
+
+        .nav-icon {
+            font-size: 4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .nav-card .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .stats-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .stats-section h3 {
+            margin-bottom: 1.5rem;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .stat-card.pendientes .stat-value {
+            color: var(--warning);
+        }
+
+        .stat-card.atendidos .stat-value {
+            color: var(--success);
+        }
+
+        .stat-card.socios .stat-value {
+            color: var(--info);
+        }
+
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 1rem;
+            }
+
+            .admin-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .nav-card {
+                padding: 1.5rem;
+            }
+
+            .nav-icon {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <div style="position: absolute; top: 20px; right: 20px; display: flex; align-items: center; gap: 15px;">
+                <span style="color: var(--text-secondary);">👤 {{ usuario.nombre }}</span>
+                <a href="{{ url_for('logout') }}" class="btn--outline"
+                    style="text-decoration: none; padding: 8px 15px; border-radius: 8px; font-size: 0.9rem;">
+                    Cerrar Sesión
+                </a>
+            </div>
+            {% if logo_url %}
+            <img src="{{ logo_url }}" alt="Cooperativa Reducto Ltda." style="height: 84px; width: auto; margin-bottom: 10px;">
+            {% endif %}
+            <h1>⚙️ Panel de Administración</h1>
+            <p>Sistema de Gestión de Tickets &mdash; Cooperativa Reducto Ltda.</p>
+        </header>
+
+        <nav class="nav-grid">
+            <a href="javascript:void(0)" onclick="abrirPantallaTV()" class="nav-card tv">
+                <div class="nav-icon">📺</div>
+                <h2>Pantalla TV</h2>
+                <p>Pantalla para mostrar en el televisor de la sala de espera</p>
+                <span class="badge">Abre en ventana nueva</span>
+            </a>
+
+            <a href="/operador" class="nav-card operador">
+                <div class="nav-icon">🎫</div>
+                <h2>Panel Operador</h2>
+                <p>Gestionar tickets, llamar y finalizar atenciones</p>
+                <span class="badge">Control de turnos</span>
+            </a>
+
+            <a href="/socio" class="nav-card socio">
+                <div class="nav-icon">👥</div>
+                <h2>Pantalla Socio</h2>
+                <p>Pantalla para que los socios saquen su turno</p>
+                <span class="badge">Kiosco de atención</span>
+            </a>
+
+            <a href="/admin/socios" class="nav-card socios-gestion">
+                <div class="nav-icon">📋</div>
+                <h2>Gestión de Socios</h2>
+                <p>Cargar y administrar datos de los socios</p>
+                <span class="badge">Base de datos</span>
+            </a>
+
+            <a href="/admin/usuarios" class="nav-card"
+                style="border-color: rgba(139, 92, 246, 0.5); background: linear-gradient(135deg, var(--bg-card) 0%, rgba(139, 92, 246, 0.1) 100%);">
+                <div class="nav-icon">👤</div>
+                <h2>Gestión de Usuarios</h2>
+                <p>Administrar operadores y administradores del sistema</p>
+                <span class="badge">Accesos</span>
+            </a>
+
+            <a href="/admin/departamentos" class="nav-card"
+                style="border-color: rgba(6, 182, 212, 0.5); background: linear-gradient(135deg, var(--bg-card) 0%, rgba(6, 182, 212, 0.1) 100%);">
+                <div class="nav-icon">🏢</div>
+                <h2>Departamentos</h2>
+                <p>Configurar áreas de atención y códigos</p>
+                <span class="badge">Configuración</span>
+            </a>
+
+            <a href="/admin/reportes" class="nav-card"
+                style="border-color: rgba(56, 189, 248, 0.6); background: linear-gradient(135deg, var(--bg-card) 0%, rgba(56, 189, 248, 0.12) 100%);">
+                <div class="nav-icon">📊</div>
+                <h2>Tablero de Gestión</h2>
+                <p>Tiempos de espera y atención, horas pico y productividad por puesto</p>
+                <span class="badge">Reportes</span>
+            </a>
+
+            <a href="/admin/avisos" class="nav-card"
+                style="border-color: rgba(245, 158, 11, 0.6); background: linear-gradient(135deg, var(--bg-card) 0%, rgba(245, 158, 11, 0.12) 100%);">
+                <div class="nav-icon">📢</div>
+                <h2>Avisos de la TV</h2>
+                <p>Tasas, requisitos y campañas que rotan en la sala de espera</p>
+                <span class="badge">Comunicación</span>
+            </a>
+
+            <a href="/admin/historico" class="nav-card"
+                style="border-color: rgba(99, 102, 241, 0.5); background: linear-gradient(135deg, var(--bg-card) 0%, rgba(99, 102, 241, 0.1) 100%);">
+                <div class="nav-icon">📜</div>
+                <h2>Histórico</h2>
+                <p>Ver historial completo de tickets atendidos</p>
+                <span class="badge">Reportes</span>
+            </a>
+
+            <a href="javascript:void(0)" onclick="reiniciarNumeracion()" class="nav-card"
+                style="border-color: rgba(239, 68, 68, 0.5); background: linear-gradient(135deg, var(--bg-card) 0%, rgba(239, 68, 68, 0.1) 100%);">
+                <div class="nav-icon">🔄</div>
+                <h2>Reiniciar Turnos</h2>
+                <p>Finalizar todos los tickets pendientes</p>
+                <span class="badge">⚠️ Acción crítica</span>
+            </a>
+        </nav>
+
+
+        <section class="stats-section">
+            <h3>📊 Estadísticas del Día</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalHoy">0</div>
+                    <div class="stat-label">Tickets Generados</div>
+                </div>
+                <div class="stat-card pendientes">
+                    <div class="stat-value" id="pendientes">0</div>
+                    <div class="stat-label">En Espera</div>
+                </div>
+                <div class="stat-card atendidos">
+                    <div class="stat-value" id="atendidos">0</div>
+                    <div class="stat-label">Atendidos</div>
+                </div>
+                <div class="stat-card socios">
+                    <div class="stat-value" id="totalSocios">0</div>
+                    <div class="stat-label">Socios Registrados</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Función para abrir pantalla TV en ventana completa
+        function abrirPantallaTV() {
+            const width = screen.width;
+            const height = screen.height;
+            window.open('/sala_espera', 'PantallaTV',
+                `width=${width},height=${height},fullscreen=yes,menubar=no,toolbar=no,location=no,status=no`);
+        }
+
+        // Cargar estadísticas
+        async function cargarEstadisticas() {
+            try {
+                const response = await fetch('/api/estadisticas');
+                const data = await response.json();
+
+                document.getElementById('totalHoy').textContent = data.total_hoy || 0;
+                document.getElementById('pendientes').textContent = data.pendientes || 0;
+                document.getElementById('atendidos').textContent = data.atendidos || 0;
+            } catch (error) {
+                console.error('Error al cargar estadísticas:', error);
+            }
+
+            // Cargar total de socios
+            try {
+                const response = await fetch('/api/socios/count');
+                const data = await response.json();
+                document.getElementById('totalSocios').textContent = data.count || 0;
+            } catch (error) {
+                console.error('Error al cargar socios:', error);
+            }
+        }
+
+        // Cargar al inicio y actualizar cada 30 segundos
+        cargarEstadisticas();
+        setInterval(cargarEstadisticas, 30000);
+
+        // Reiniciar numeración
+        async function reiniciarNumeracion() {
+            if (!confirm('¿Reiniciar la numeración de turnos?\n\nEl próximo ticket de cada departamento volverá a empezar en 001.\n\nLos tickets ya emitidos hoy NO se borran: se conservan en el histórico.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/tickets/reiniciar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}) // Send empty object to prevent 400 Bad Request
+                });
+
+                if (response.ok) {
+                    alert('✅ Numeración reiniciada correctamente');
+                    cargarEstadisticas();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.error || 'No se pudo reiniciar'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al reiniciar numeración');
+            }
+        }
+    </script>
+</body>
+
+</html>

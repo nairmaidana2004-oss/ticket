@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Departamentos - Sistema de Tickets</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem 2rem;
+            background: var(--bg-card);
+            border-radius: 15px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 2rem;
+        }
+
+        .form-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            height: fit-content;
+        }
+
+        .form-section h2 {
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .color-preview {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .color-preview input[type="color"] {
+            width: 60px;
+            height: 50px;
+            padding: 0;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .color-preview input[type="text"] {
+            flex: 1;
+        }
+
+        .icon-preview {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .icon-preview .preview {
+            width: 60px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .icon-preview input {
+            flex: 1;
+        }
+
+        .emoji-suggestions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .emoji-suggestions button {
+            padding: 0.5rem;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .emoji-suggestions button:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .list-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .list-header h2 {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+        }
+
+        .dept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .dept-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .dept-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .dept-card__header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .dept-card__icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .dept-card__info {
+            flex: 1;
+        }
+
+        .dept-card__name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .dept-card__code {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .dept-card__actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-action {
+            padding: 0.5rem 0.75rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+
+        .btn-edit {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--info);
+        }
+
+        .btn-edit:hover {
+            background: rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .btn-delete:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🏢 Gestión de Departamentos</h1>
+            <a href="/admin" class="btn-back">
+                ← Volver al Panel
+            </a>
+        </header>
+
+        <main class="main-grid">
+            <section class="form-section">
+                <h2 id="formTitle">➕ Nuevo Departamento</h2>
+                <form id="deptForm">
+                    <input type="hidden" id="deptId" value="">
+
+                    <div class="form-group">
+                        <label for="nombre">Nombre *</label>
+                        <input type="text" id="nombre" placeholder="Ej: Créditos" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="codigo">Código *</label>
+                        <input type="text" id="codigo" placeholder="Ej: C, AH" maxlength="5" required
+                            style="text-transform: uppercase;">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Color</label>
+                        <div class="color-preview">
+                            <input type="color" id="colorPicker" value="#6366f1">
+                            <input type="text" id="color" value="#6366f1" placeholder="#6366f1">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ícono (Emoji)</label>
+                        <div class="icon-preview">
+                            <div class="preview" id="iconPreview">📋</div>
+                            <input type="text" id="icono" value="📋" placeholder="📋">
+                        </div>
+                        <div class="emoji-suggestions">
+                            <button type="button" onclick="setIcon('💰')">💰</button>
+                            <button type="button" onclick="setIcon('🤝')">🤝</button>
+                            <button type="button" onclick="setIcon('💳')">💳</button>
+                            <button type="button" onclick="setIcon('🏦')">🏦</button>
+                            <button type="button" onclick="setIcon('📋')">📋</button>
+                            <button type="button" onclick="setIcon('📞')">📞</button>
+                            <button type="button" onclick="setIcon('💼')">💼</button>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="limpiarFormulario()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="list-section">
+                <div class="list-header">
+                    <h2>📑 Departamentos Registrados</h2>
+                </div>
+
+                <div class="dept-grid" id="deptGrid">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        let departamentos = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarDepartamentos();
+        });
+
+        // Sincronizar color picker con input
+        document.getElementById('colorPicker').addEventListener('input', (e) => {
+            document.getElementById('color').value = e.target.value;
+        });
+
+        document.getElementById('color').addEventListener('input', (e) => {
+            document.getElementById('colorPicker').value = e.target.value;
+        });
+
+        // Actualizar preview del ícono
+        document.getElementById('icono').addEventListener('input', (e) => {
+            document.getElementById('iconPreview').textContent = e.target.value || '📋';
+        });
+
+        document.getElementById('deptForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await guardarDepartamento();
+        });
+
+        function setIcon(emoji) {
+            document.getElementById('icono').value = emoji;
+            document.getElementById('iconPreview').textContent = emoji;
+        }
+
+        async function cargarDepartamentos() {
+            try {
+                const response = await fetch('/api/departamentos');
+                departamentos = await response.json();
+                renderizarDepartamentos(departamentos);
+            } catch (error) {
+                console.error('Error al cargar departamentos:', error);
+                mostrarToast('Error al cargar departamentos', 'error');
+            }
+        }
+
+        function renderizarDepartamentos(lista) {
+            const container = document.getElementById('deptGrid');
+
+            if (lista.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🏢</div>
+                        <p>No hay departamentos registrados</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = lista.map(dept => `
+                <div class="dept-card">
+                    <div class="dept-card__header">
+                        <div class="dept-card__icon" style="background: ${dept.color}20;">
+                            ${dept.icono}
+                        </div>
+                        <div class="dept-card__info">
+                            <div class="dept-card__name">${dept.nombre}</div>
+                            <div class="dept-card__code">Código: <strong>${dept.codigo}</strong></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 20px; height: 20px; border-radius: 5px; background: ${dept.color};"></div>
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">${dept.color}</span>
+                    </div>
+                    <div class="dept-card__actions">
+                        <button class="btn-action btn-edit" onclick="editarDepartamento(${dept.id})">
+                            ✏️ Editar
+                        </button>
+                        <button class="btn-action btn-delete" onclick="eliminarDepartamento(${dept.id})">
+                            🗑️ Eliminar
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function guardarDepartamento() {
+            const id = document.getElementById('deptId').value;
+
+            const data = {
+                nombre: document.getElementById('nombre').value.trim(),
+                codigo: document.getElementById('codigo').value.trim().toUpperCase(),
+                color: document.getElementById('color').value,
+                icono: document.getElementById('icono').value || '📋'
+            };
+
+            try {
+                const url = id ? `/api/departamentos/${id}` : '/api/departamentos';
+                const method = id ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Error al guardar');
+                }
+
+                mostrarToast(id ? 'Departamento actualizado' : 'Departamento creado', 'success');
+                limpiarFormulario();
+                cargarDepartamentos();
+            } catch (error) {
+                mostrarToast(error.message, 'error');
+            }
+        }
+
+        function editarDepartamento(id) {
+            const dept = departamentos.find(d => d.id === id);
+            if (!dept) return;
+
+            document.getElementById('deptId').value = dept.id;
+            document.getElementById('nombre').value = dept.nombre;
+            document.getElementById('codigo').value = dept.codigo;
+            document.getElementById('color').value = dept.color;
+            document.getElementById('colorPicker').value = dept.color;
+            document.getElementById('icono').value = dept.icono;
+            document.getElementById('iconPreview').textContent = dept.icono;
+
+            document.getElementById('formTitle').textContent = '✏️ Editar Departamento';
+            document.getElementById('nombre').focus();
+        }
+
+        async function eliminarDepartamento(id) {
+            const dept = departamentos.find(d => d.id === id);
+            if (!confirm(`¿Estás seguro de eliminar el departamento "${dept.nombre}"? Esta acción no se puede deshacer.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/departamentos/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Error al eliminar');
+                }
+
+                mostrarToast('Departamento eliminado', 'success');
+                cargarDepartamentos();
+            } catch (error) {
+                mostrarToast(error.message, 'error');
+            }
+        }
+
+        function limpiarFormulario() {
+            document.getElementById('deptForm').reset();
+            document.getElementById('deptId').value = '';
+            document.getElementById('formTitle').textContent = '➕ Nuevo Departamento';
+            document.getElementById('color').value = '#6366f1';
+            document.getElementById('colorPicker').value = '#6366f1';
+            document.getElementById('icono').value = '📋';
+            document.getElementById('iconPreview').textContent = '📋';
+        }
+
+        function mostrarToast(mensaje, tipo) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            toast.textContent = mensaje;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avisos de la TV - Cooperativa Reducto Ltda.</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        .contenedor {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 20px 60px;
+        }
+
+        .cabecera {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .cabecera h1 {
+            font-size: 1.7rem;
+            margin: 0;
+        }
+
+        .cabecera__logo {
+            height: 56px;
+            width: auto;
+        }
+
+        .cabecera__acciones {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .intro {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-size: .95rem;
+        }
+
+        .grilla {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 22px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .grilla {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .panel h2 {
+            font-size: 1.1rem;
+            margin: 0 0 16px;
+        }
+
+        .campo {
+            margin-bottom: 14px;
+        }
+
+        .campo label {
+            display: block;
+            font-size: .78rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .campo input,
+        .campo textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, .15);
+            background: var(--bg-card-hover);
+            color: white;
+            font-size: .95rem;
+            font-family: inherit;
+        }
+
+        .campo textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .fila-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: .9rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn--primary {
+            background: var(--primary);
+            color: #05301c;
+        }
+
+        .btn--ghost {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, .25);
+            color: var(--text-secondary);
+        }
+
+        .aviso-item {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            padding: 14px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, .2);
+            margin-bottom: 10px;
+            border-left: 5px solid var(--primary);
+        }
+
+        .aviso-item--inactivo {
+            opacity: .45;
+        }
+
+        .aviso-item__icono {
+            font-size: 1.8rem;
+        }
+
+        .aviso-item__cuerpo {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .aviso-item__titulo {
+            font-weight: 800;
+            font-size: 1.05rem;
+        }
+
+        .aviso-item__destacado {
+            color: var(--primary-light);
+            font-weight: 700;
+            font-size: .95rem;
+        }
+
+        .aviso-item__texto {
+            color: var(--text-secondary);
+            font-size: .85rem;
+            margin-top: 2px;
+        }
+
+        .aviso-item__acciones {
+            display: flex;
+            gap: 6px;
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, .08);
+            border: none;
+            color: white;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .vacio {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 40px;
+        }
+
+        .previa {
+            background: var(--bg-dark);
+            border-radius: 14px;
+            padding: 26px;
+            text-align: center;
+            border: 2px dashed rgba(255, 255, 255, .18);
+        }
+
+        .previa__icono {
+            font-size: 3rem;
+        }
+
+        .previa__titulo {
+            font-size: 1.6rem;
+            font-weight: 900;
+            margin: 8px 0;
+        }
+
+        .previa__destacado {
+            font-size: 2rem;
+            font-weight: 900;
+        }
+
+        .previa__texto {
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            z-index: 999;
+        }
+
+        .toast.ok {
+            background: var(--primary);
+            color: #05301c;
+        }
+
+        .toast.error {
+            background: #dc2626;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="contenedor">
+        <header class="cabecera">
+            {% if logo_url %}<img src="{{ logo_url }}" alt="" class="cabecera__logo">{% endif %}
+            <div>
+                <h1>Avisos de la TV</h1>
+            </div>
+            <div class="cabecera__acciones">
+                <span style="color: var(--text-secondary); font-size: .9rem;">👤 {{ usuario.nombre }}</span>
+                <a href="/sala_espera" target="_blank" class="btn btn--ghost">Ver la TV ↗</a>
+                <a href="/admin" class="btn btn--ghost">← Volver</a>
+            </div>
+        </header>
+
+        <p class="intro">
+            Estos mensajes rotan en el televisor de la sala de espera mientras no hay
+            un turno recién llamado. Sirven para tasas, requisitos, campañas o avisos de asamblea.
+        </p>
+
+        <div class="grilla">
+            <div class="panel">
+                <h2 id="tituloForm">➕ Nuevo aviso</h2>
+                <form id="formAviso" onsubmit="event.preventDefault(); guardar();">
+                    <input type="hidden" id="avisoId">
+
+                    <div class="campo">
+                        <label for="titulo">Título *</label>
+                        <input type="text" id="titulo" maxlength="120" required
+                            placeholder="Ej: Crédito para tu negocio">
+                    </div>
+
+                    <div class="campo">
+                        <label for="destacado">Dato destacado</label>
+                        <input type="text" id="destacado" maxlength="120" placeholder="Ej: Desde 18% anual">
+                    </div>
+
+                    <div class="campo">
+                        <label for="texto">Texto</label>
+                        <textarea id="texto" placeholder="Ej: Hasta 36 meses. Solo con cédula y factura."></textarea>
+                    </div>
+
+                    <div class="fila-2">
+                        <div class="campo">
+                            <label for="icono">Ícono</label>
+                            <input type="text" id="icono" maxlength="4" value="📢">
+                        </div>
+                        <div class="campo">
+                            <label for="color">Color</label>
+                            <input type="color" id="color" value="#16a34a" style="height: 42px; padding: 4px;">
+                        </div>
+                    </div>
+
+                    <div class="fila-2">
+                        <div class="campo">
+                            <label for="orden">Orden</label>
+                            <input type="number" id="orden" value="0">
+                        </div>
+                        <div class="campo">
+                            <label for="activo">Estado</label>
+                            <select id="activo"
+                                style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:var(--bg-card-hover);color:white;">
+                                <option value="1" selected>Activo</option>
+                                <option value="0">Oculto</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="campo"
+                        style="background:rgba(255,255,255,.04); border:1px solid var(--ring); border-radius:12px; padding:12px 14px;">
+                        <label style="margin-bottom:10px;">Vigencia de la campaña</label>
+                        <div class="fila-2">
+                            <div>
+                                <label for="fecha_desde" style="font-size:.72rem;">Desde</label>
+                                <input type="date" id="fecha_desde">
+                            </div>
+                            <div>
+                                <label for="fecha_hasta" style="font-size:.72rem;">Hasta</label>
+                                <input type="date" id="fecha_hasta">
+                            </div>
+                        </div>
+                        <p style="color:var(--text-secondary); font-size:.82rem; margin-top:8px;">
+                            Dejalas vacías para que se muestre siempre. Fuera de este rango
+                            la TV lo saca sola, sin que nadie tenga que acordarse.
+                        </p>
+                    </div>
+
+                    <div class="campo">
+                        <label for="duracion">Segundos en pantalla</label>
+                        <input type="number" id="duracion" value="12" min="3" max="120">
+                        <p style="color:var(--text-secondary); font-size:.8rem; margin-top:6px;">
+                            Una pieza con mucho texto necesita más tiempo. Sugerido: 10 para
+                            un titular, 18 para un flyer.
+                        </p>
+                    </div>
+
+                    <div class="campo"
+                        style="background:rgba(76,194,240,.10); border:1px solid rgba(76,194,240,.45); border-radius:12px; padding:12px 14px;">
+                        <label for="archivoImagen">Pieza gráfica (opcional)</label>
+                        <input type="file" id="archivoImagen" accept="image/png,image/jpeg,image/gif,image/webp"
+                            style="width:100%; font-size:.85rem;">
+                        <p style="color:var(--text-secondary); font-size:.82rem; margin-top:8px;">
+                            Si cargás una imagen, la TV la muestra sola a pantalla completa.
+                            Ideal para los flyers que ya tenés diseñados. Máximo 6 MB.
+                        </p>
+                        <div id="imagenActual" style="display:none; margin-top:10px;">
+                            <img id="imagenActualImg" src="" alt=""
+                                style="max-width:100%; max-height:150px; border-radius:8px; display:block;">
+                            <button type="button" class="btn btn--ghost" style="margin-top:8px; padding:6px 12px; font-size:.8rem;"
+                                onclick="quitarImagen()">Quitar imagen</button>
+                        </div>
+                    </div>
+
+                    <div class="campo"
+                        style="background:rgba(245,158,11,.10); border:1px solid rgba(245,158,11,.45); border-radius:12px; padding:12px 14px;">
+                        <label style="display:flex; align-items:flex-start; gap:10px; text-transform:none; letter-spacing:0; font-size:.92rem; color:white; cursor:pointer; margin:0;">
+                            <input type="checkbox" id="banner" style="width:auto; margin-top:3px;">
+                            <span>
+                                <strong>Mostrar como banner fijo</strong><br>
+                                <span style="color:var(--text-secondary); font-size:.85rem;">
+                                    Franja abajo de la TV, siempre visible. No se interrumpe
+                                    cuando se llama un turno. Ideal para la campaña vigente.
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-top:8px;">
+                        <button type="button" class="btn btn--ghost" onclick="limpiar()">Cancelar</button>
+                        <button type="submit" class="btn btn--primary">Guardar</button>
+                    </div>
+                </form>
+
+                <h2 style="margin-top:26px;">Vista previa</h2>
+                <div class="previa" id="previa"></div>
+            </div>
+
+            <div class="panel">
+                <h2>Avisos cargados</h2>
+                <div id="lista"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let avisos = [];
+
+        function escapar(t) {
+            const d = document.createElement('div');
+            d.textContent = t == null ? '' : String(t);
+            return d.innerHTML;
+        }
+
+        function toast(msg, tipo) {
+            const t = document.createElement('div');
+            t.className = 'toast ' + (tipo || 'ok');
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2600);
+        }
+
+        function previa() {
+            const icono = document.getElementById('icono').value || '📢';
+            const titulo = document.getElementById('titulo').value || 'Título del aviso';
+            const destacado = document.getElementById('destacado').value;
+            const texto = document.getElementById('texto').value;
+            const color = document.getElementById('color').value;
+
+            document.getElementById('previa').innerHTML = `
+                <div class="previa__icono">${escapar(icono)}</div>
+                <div class="previa__titulo" style="color:${escapar(color)}">${escapar(titulo)}</div>
+                ${destacado ? `<div class="previa__destacado">${escapar(destacado)}</div>` : ''}
+                ${texto ? `<div class="previa__texto">${escapar(texto)}</div>` : ''}`;
+        }
+
+        ['titulo', 'destacado', 'texto', 'icono', 'color'].forEach(id =>
+            document.getElementById(id).addEventListener('input', previa));
+
+        // Se ve de un vistazo qué está saliendo en la TV y qué no
+        const VIGENCIA = {
+            vigente: ['#16a34a', '#ffffff', 'EN PANTALLA'],
+            programado: ['#38bdf8', '#04241b', 'PROGRAMADO'],
+            vencido: ['#dc2626', '#ffffff', 'VENCIDO'],
+            oculto: ['#4b5563', '#e5e7eb', 'OCULTO'],
+        };
+
+        function insigniaVigencia(a) {
+            const v = VIGENCIA[a.estado_vigencia];
+            if (!v) return '';
+            const [fondo, texto, etiqueta] = v;
+            let detalle = '';
+            if (a.fecha_desde || a.fecha_hasta) {
+                const f = d => d ? d.split('-').reverse().slice(0, 2).join('/') : '';
+                detalle = a.fecha_desde && a.fecha_hasta
+                    ? ` ${f(a.fecha_desde)}–${f(a.fecha_hasta)}`
+                    : (a.fecha_hasta ? ` hasta ${f(a.fecha_hasta)}` : ` desde ${f(a.fecha_desde)}`);
+            }
+            return `<span style="background:${fondo};color:${texto};font-size:.66rem;
+                font-weight:800;padding:2px 8px;border-radius:12px;margin-left:6px;
+                vertical-align:middle;">${etiqueta}${escapar(detalle)}</span>`;
+        }
+
+        async function cargar() {
+            const r = await fetch('/api/avisos/todos');
+            avisos = await r.json();
+            const lista = document.getElementById('lista');
+
+            if (!avisos.length) {
+                lista.innerHTML = `<p class="vacio">Todavía no hay avisos.<br>
+                    Mientras no cargue ninguno, la TV muestra solo los turnos.</p>`;
+                return;
+            }
+
+            lista.innerHTML = avisos.map(a => `
+                <div class="aviso-item ${a.activo ? '' : 'aviso-item--inactivo'}"
+                     style="border-left-color:${escapar(a.color)}">
+                    ${a.imagen
+                    ? `<img src="${escapar(a.imagen)}" alt="" style="width:74px; height:74px; object-fit:cover; border-radius:8px; flex-shrink:0;">`
+                    : `<div class="aviso-item__icono">${escapar(a.icono)}</div>`}
+                    <div class="aviso-item__cuerpo">
+                        <div class="aviso-item__titulo">
+                            ${escapar(a.titulo)}
+                            ${a.banner ? '<span style="background:#f59e0b;color:#1c1917;font-size:.68rem;font-weight:800;padding:2px 8px;border-radius:12px;margin-left:8px;vertical-align:middle;">BANNER FIJO</span>' : ''}
+                            ${insigniaVigencia(a)}
+                        </div>
+                        ${a.destacado ? `<div class="aviso-item__destacado">${escapar(a.destacado)}</div>` : ''}
+                        ${a.texto ? `<div class="aviso-item__texto">${escapar(a.texto)}</div>` : ''}
+                    </div>
+                    <div class="aviso-item__acciones">
+                        <button class="icon-btn" title="${a.activo ? 'Ocultar' : 'Mostrar'}"
+                            onclick="alternar(${a.id})">${a.activo ? '👁' : '🚫'}</button>
+                        <button class="icon-btn" title="Editar" onclick="editar(${a.id})">✏️</button>
+                        <button class="icon-btn" title="Eliminar" onclick="eliminar(${a.id})">🗑️</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        async function guardar() {
+            const id = document.getElementById('avisoId').value;
+            const datos = {
+                titulo: document.getElementById('titulo').value.trim(),
+                destacado: document.getElementById('destacado').value.trim(),
+                texto: document.getElementById('texto').value.trim(),
+                icono: document.getElementById('icono').value.trim() || '📢',
+                color: document.getElementById('color').value,
+                orden: parseInt(document.getElementById('orden').value || '0', 10),
+                activo: document.getElementById('activo').value === '1',
+                banner: document.getElementById('banner').checked,
+                fecha_desde: document.getElementById('fecha_desde').value,
+                fecha_hasta: document.getElementById('fecha_hasta').value,
+                duracion: parseInt(document.getElementById('duracion').value || '12', 10)
+            };
+
+            const r = await fetch(id ? `/api/avisos/${id}` : '/api/avisos', {
+                method: id ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
+
+            if (!r.ok) {
+                const e = await r.json();
+                toast(e.error || 'No se pudo guardar', 'error');
+                return;
+            }
+
+            // La imagen viaja aparte, ya con el aviso creado y su id asignado
+            const guardado = await r.json();
+            const archivo = document.getElementById('archivoImagen').files[0];
+            if (archivo) {
+                const cuerpo = new FormData();
+                cuerpo.append('imagen', archivo);
+                const ri = await fetch(`/api/avisos/${guardado.id}/imagen`, {
+                    method: 'POST', body: cuerpo
+                });
+                if (!ri.ok) {
+                    const e = await ri.json();
+                    toast(e.error || 'No se pudo subir la imagen', 'error');
+                    cargar();
+                    return;
+                }
+            }
+
+            toast(id ? 'Aviso actualizado' : 'Aviso creado');
+            limpiar();
+            cargar();
+        }
+
+        async function quitarImagen() {
+            const id = document.getElementById('avisoId').value;
+            if (!id) return;
+            await fetch(`/api/avisos/${id}/imagen`, { method: 'DELETE' });
+            document.getElementById('imagenActual').style.display = 'none';
+            toast('Imagen quitada');
+            cargar();
+        }
+
+        function editar(id) {
+            const a = avisos.find(x => x.id === id);
+            if (!a) return;
+            document.getElementById('avisoId').value = a.id;
+            document.getElementById('titulo').value = a.titulo;
+            document.getElementById('destacado').value = a.destacado || '';
+            document.getElementById('texto').value = a.texto || '';
+            document.getElementById('icono').value = a.icono;
+            document.getElementById('color').value = a.color;
+            document.getElementById('orden').value = a.orden;
+            document.getElementById('activo').value = a.activo ? '1' : '0';
+            document.getElementById('banner').checked = !!a.banner;
+            document.getElementById('fecha_desde').value = a.fecha_desde || '';
+            document.getElementById('fecha_hasta').value = a.fecha_hasta || '';
+            document.getElementById('duracion').value = a.duracion || 12;
+            document.getElementById('archivoImagen').value = '';
+            const caja = document.getElementById('imagenActual');
+            if (a.imagen) {
+                document.getElementById('imagenActualImg').src = a.imagen;
+                caja.style.display = 'block';
+            } else {
+                caja.style.display = 'none';
+            }
+            document.getElementById('tituloForm').textContent = '✏️ Editar aviso';
+            previa();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function alternar(id) {
+            const a = avisos.find(x => x.id === id);
+            if (!a) return;
+            await fetch(`/api/avisos/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ activo: !a.activo })
+            });
+            cargar();
+        }
+
+        async function eliminar(id) {
+            const a = avisos.find(x => x.id === id);
+            if (!a || !confirm(`¿Eliminar el aviso "${a.titulo}"?`)) return;
+            await fetch(`/api/avisos/${id}`, { method: 'DELETE' });
+            toast('Aviso eliminado');
+            cargar();
+        }
+
+        function limpiar() {
+            document.getElementById('formAviso').reset();
+            document.getElementById('avisoId').value = '';
+            document.getElementById('icono').value = '📢';
+            document.getElementById('color').value = '#16a34a';
+            document.getElementById('banner').checked = false;
+            document.getElementById('archivoImagen').value = '';
+            document.getElementById('imagenActual').style.display = 'none';
+            document.getElementById('duracion').value = 12;
+            document.getElementById('tituloForm').textContent = '➕ Nuevo aviso';
+            previa();
+        }
+
+        previa();
+        cargar();
+    </script>
+</body>
+
+</html>

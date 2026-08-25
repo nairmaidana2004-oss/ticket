@@ -1,0 +1,36 @@
+# Base de datos, claves y todo lo que es local de cada instalacion
+instance/
+*.db
+*.db.bak_*
+*.sqlite
+*.sqlite3
+
+# NUNCA versionar claves ni secretos
+*.pem
+*.key
+id_rsa*
+ssh_keys/
+ssh_config
+.env
+secret_key.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Editores y sistema operativo
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+*~
+
+# Logs y temporales
+*.log
+gen_log.txt
+_archivo/
+capturas/

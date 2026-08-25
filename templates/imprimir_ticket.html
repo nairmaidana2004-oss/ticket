@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imprimir Ticket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: white;
+            color: black;
+            padding: 20px;
+        }
+
+        .ticket {
+            width: 80mm;
+            margin: 0 auto;
+            padding: 15px;
+            border: 2px dashed #333;
+            background: white;
+        }
+
+        .ticket-header {
+            text-align: center;
+            border-bottom: 2px dashed #000;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .ticket-logo {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        /* En pantalla el logo va tal cual: es la vista previa del ticket y el
+           socio tiene que reconocer la marca. El ajuste para papel térmico va
+           solo dentro de @media print. */
+        .ticket-logo-img {
+            width: 120px;
+            height: auto;
+            margin-bottom: 8px;
+        }
+
+        @media print {
+
+            /* Papel térmico: escala de grises con algo de contraste para que no
+               salga como una mancha. Sin subir el brillo, que borraba el logo. */
+            .ticket-logo-img {
+                width: 100px;
+                filter: grayscale(100%) contrast(125%);
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        .ticket-empresa {
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .ticket-numero {
+            text-align: center;
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 30px 0;
+            letter-spacing: 5px;
+        }
+
+        .ticket-departamento {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+
+        .ticket-socio {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px 0;
+            border-top: 1px dashed #000;
+            font-size: 1rem;
+        }
+
+        .ticket-socio p {
+            margin: 8px 0;
+        }
+
+        .ticket-fecha {
+            text-align: center;
+            font-size: 0.95rem;
+            color: #333;
+            margin: 15px 0;
+        }
+
+        .ticket-footer {
+            text-align: center;
+            border-top: 2px dashed #000;
+            padding-top: 15px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .btn-imprimir {
+            display: block;
+            width: 80mm;
+            margin: 30px auto;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-imprimir:hover {
+            background: #059669;
+        }
+
+        .btn-volver {
+            display: block;
+            width: 80mm;
+            margin: 10px auto;
+            padding: 12px;
+            font-size: 1rem;
+            background: #6b7280;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                padding: 0;
+            }
+
+            .ticket {
+                border: none;
+                width: 100%;
+            }
+
+            @page {
+                size: 80mm auto;
+                margin: 5mm;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ticket">
+        <div class="ticket-header">
+            {% if logo_url %}
+            <img src="{{ logo_url }}" alt="Cooperativa Reducto Ltda." class="ticket-logo-img">
+            {% else %}
+            <div class="ticket-logo">🏦</div>
+            {% endif %}
+            <div class="ticket-empresa">Cooperativa Reducto Ltda.</div>
+            <div style="font-size: 0.8rem; margin-top: 2px;">de Microfinanza</div>
+        </div>
+
+        <div class="ticket-numero" id="ticketNumero">---</div>
+
+        <div class="ticket-departamento" id="ticketDepartamento">Departamento</div>
+
+        <div class="ticket-socio" id="ticketSocio">
+            <!-- Datos del socio -->
+        </div>
+
+        <div class="ticket-fecha" id="ticketFecha">
+            <!-- Fecha y hora -->
+        </div>
+
+
+        <div class="ticket-footer">
+            Espere su turno en sala de espera<br>
+            <strong>¡Gracias por su visita!</strong>
+        </div>
+    </div>
+
+    <button class="btn-imprimir no-print" onclick="window.print()">
+        🖨️ IMPRIMIR TICKET
+    </button>
+
+    <a href="/" class="btn-volver no-print">
+        ← Volver al inicio
+    </a>
+
+    <script>
+        // Obtener datos del ticket desde localStorage
+        document.addEventListener('DOMContentLoaded', function () {
+            const ticketData = localStorage.getItem('ticketParaImprimir');
+
+            if (ticketData) {
+                const ticket = JSON.parse(ticketData);
+
+                document.getElementById('ticketNumero').textContent = ticket.codigo_completo || '---';
+                document.getElementById('ticketDepartamento').textContent = ticket.departamento || 'Departamento';
+
+                const escapar = (t) => {
+                    const d = document.createElement('div');
+                    d.textContent = t == null ? '' : String(t);
+                    return d.innerHTML;
+                };
+
+                let socioHtml = '';
+                if (ticket.nombre_socio) {
+                    socioHtml += '<p><strong>Socio:</strong> ' + escapar(ticket.nombre_socio) + '</p>';
+                }
+                if (ticket.numero_socio) {
+                    socioHtml += '<p><strong>N° de socio:</strong> ' + escapar(ticket.numero_socio) + '</p>';
+                }
+                if (ticket.dni_socio) {
+                    socioHtml += '<p><strong>Documento:</strong> ' + escapar(ticket.dni_socio) + '</p>';
+                }
+                document.getElementById('ticketSocio').innerHTML = socioHtml || '<p>---</p>';
+
+                if (ticket.prioridad_texto) {
+                    document.getElementById('ticketDepartamento').innerHTML +=
+                        '<div style="font-size:.8rem; margin-top:4px;"><strong>ATENCION PREFERENCIAL</strong><br>'
+                        + escapar(ticket.prioridad_texto) + '</div>';
+                }
+
+
+                // Fecha actual
+                const now = new Date();
+                const fecha = now.toLocaleString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                document.getElementById('ticketFecha').textContent = fecha;
+
+                // Limpiar localStorage
+                // localStorage.removeItem('ticketParaImprimir');
+            } else {
+                document.getElementById('ticketNumero').textContent = 'SIN DATOS';
+                document.getElementById('ticketSocio').innerHTML = '<p>No hay ticket para imprimir</p>';
+            }
+        });
+    </script>
+</body>
+
+</html>

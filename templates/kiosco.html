@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiosco de Socios</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        /* Estilos específicos para el formulario */
+        .form-step {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .form-step.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .socio-form {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            margin: 0 auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn-continuar {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-continuar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-continuar:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.active {
+            background: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        /* El paso ya cumplido tiene que seguir viéndose: con solo el color de
+           fondo se perdía contra el verde de la pantalla. */
+        .step-dot.completed {
+            background: var(--success);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55);
+        }
+
+        /* Logo institucional en la pantalla de entrada: es lo primero que ve
+           el socio, así que va grande y bien visible. */
+        .header__logo-img {
+            width: 170px;
+            height: auto;
+            filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.4));
+        }
+
+        @media (max-height: 800px) {
+            .header__logo-img {
+                width: 120px;
+            }
+        }
+
+        /* Atención preferencial (Ley 4934) */
+        .preferencial-caja {
+            margin-top: 26px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.22);
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .preferencial-caja__titulo {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0 0 14px;
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        .preferencial-opciones {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .preferencial-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            min-width: 130px;
+            padding: 16px 18px;
+            border-radius: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .preferencial-btn__icono {
+            font-size: 2.1rem;
+        }
+
+        .preferencial-btn:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .preferencial-btn.activo {
+            background: #f59e0b;
+            border-color: #fbbf24;
+            color: #1c1917;
+            box-shadow: 0 0 24px rgba(245, 158, 11, 0.5);
+        }
+
+        .preferencial-caja__nota {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin: 14px 0 0;
+        }
+
+        .preferencial-caja__nota.activa {
+            color: #fde68a;
+            font-weight: 700;
+        }
+
+        /* Insignia de preferencia en el ticket */
+        .ticket-modal__preferencial {
+            display: inline-block;
+            background: #f59e0b;
+            color: #1c1917;
+            font-weight: 800;
+            font-size: 0.85rem;
+            padding: 5px 14px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+        }
+
+        /* Aviso del estado de la consulta al padrón */
+        .estado-busqueda {
+            text-align: center;
+            padding: 14px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 1.05rem;
+            line-height: 1.4;
+        }
+
+        .estado-busqueda--buscando {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .estado-busqueda--aviso {
+            background: rgba(245, 158, 11, 0.15);
+            border: 2px solid #f59e0b;
+            color: #fde68a;
+            font-weight: 600;
+        }
+
+        /* Ficha del socio: número de socio, documento y nombre */
+        .datos-socio {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+            max-width: 320px;
+            margin: 0 auto;
+        }
+
+        .datos-socio__fila {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(0, 0, 0, 0.22);
+            border-radius: 10px;
+        }
+
+        /* Contraste alto: es una pantalla de pie, mirada de lejos y por gente
+           de toda edad. El gris tenue del resto de la interfaz no alcanza. */
+        .datos-socio__etiqueta {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .datos-socio__valor {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: white;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 1px;
+        }
+
+        /* Modal mejorado para mostrar el ticket */
+        .ticket-modal {
+            max-width: 400px;
+        }
+
+        /* El ticket es lo que el socio se lleva: tiene que llevar la marca */
+        .ticket-modal__logo {
+            width: 96px;
+            height: auto;
+            display: block;
+            margin: 0 auto 6px;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
+        }
+
+        .ticket-modal__icon {
+            font-size: 2.2rem;
+        }
+
+        .ticket-modal__socio-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .ticket-modal__buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-imprimir {
+            padding: 14px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-imprimir:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Estilos Teclado */
+        .keypad-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            padding: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .keypad-btn:active {
+            transform: scale(0.95);
+            background: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        .keypad-btn--danger {
+            color: #ef4444;
+        }
+
+        .keypad-btn--warning {
+            color: #f59e0b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header__logo">
+                {% if logo_url %}
+                <img src="{{ logo_url }}" alt="Cooperativa Reducto Ltda."
+                     class="header__logo-img">
+                {% endif %}
+            </div>
+            <h1 class="header__title">Bienvenido a la Cooperativa</h1>
+            <p class="header__subtitle" id="stepTitle">Ingrese su número de cédula para continuar</p>
+        </header>
+
+        <!-- Indicador de pasos -->
+        <div class="step-indicator">
+            <div class="step-dot active" id="dot1"></div>
+            <div class="step-dot" id="dot2"></div>
+        </div>
+
+        <!-- PASO 1: Formulario de DNI -->
+        <div class="form-step active" id="step1">
+            <div class="socio-form">
+                <div class="form-group">
+                    <label for="dniSocio"
+                        style="text-align: center; display: block; font-size: 1.2rem; margin-bottom: 20px;">🪪 Número de
+                        Cédula / DNI</label>
+                    <input type="number" id="dniSocio" placeholder="Ej: 1234567" autocomplete="off"
+                        style="font-size: 2.5rem; text-align: center; padding: 25px; height: auto;" readonly>
+                </div>
+
+                <!-- Teclado Numérico -->
+                <div class="keypad"
+                    style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px;">
+                    <button class="keypad-btn" onclick="pressKey('1')">1</button>
+                    <button class="keypad-btn" onclick="pressKey('2')">2</button>
+                    <button class="keypad-btn" onclick="pressKey('3')">3</button>
+                    <button class="keypad-btn" onclick="pressKey('4')">4</button>
+                    <button class="keypad-btn" onclick="pressKey('5')">5</button>
+                    <button class="keypad-btn" onclick="pressKey('6')">6</button>
+                    <button class="keypad-btn" onclick="pressKey('7')">7</button>
+                    <button class="keypad-btn" onclick="pressKey('8')">8</button>
+                    <button class="keypad-btn" onclick="pressKey('9')">9</button>
+                    <button class="keypad-btn keypad-btn--danger" onclick="pressKey('C')">C</button>
+                    <button class="keypad-btn" onclick="pressKey('0')">0</button>
+                    <!-- Icono en SVG: el caracter ⌫ no existe en todas las fuentes
+                         y en el kiosco se veia como un cuadrado vacio -->
+                    <button class="keypad-btn keypad-btn--warning" onclick="pressKey('DEL')"
+                        aria-label="Borrar un dígito" title="Borrar">
+                        <svg width="38" height="26" viewBox="0 0 38 26" fill="none" aria-hidden="true"
+                            style="vertical-align: middle;">
+                            <path d="M13 2 L35 2 A2 2 0 0 1 37 4 L37 22 A2 2 0 0 1 35 24 L13 24 L1 13 Z"
+                                stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" />
+                            <path d="M19 8 L29 18 M29 8 L19 18" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Estado de la consulta al padrón: buscando / no encontrado.
+                     Sin este aviso, no encontrar la cédula se veía igual que
+                     un sistema colgado. -->
+                <div id="estadoBusqueda" class="estado-busqueda" style="display: none;"></div>
+
+                <!-- Área de bienvenida (se muestra al encontrar socio) -->
+                <div id="welcomeArea"
+                    style="display: none; text-align: center; margin-bottom: 25px; padding: 20px; background: rgba(16, 185, 129, 0.1); border: 2px solid var(--success); border-radius: 15px; animation: fadeIn 0.3s ease;">
+                    <p style="color: var(--text-muted); margin-bottom: 5px;">Hola,</p>
+                    <h2 id="socioNombre" style="color: var(--success); margin: 0 0 14px; font-weight: 700;">-</h2>
+                    <div class="datos-socio">
+                        <div class="datos-socio__fila" id="filaNumeroSocio">
+                            <span class="datos-socio__etiqueta">N° de socio</span>
+                            <span class="datos-socio__valor" id="socioNumero">-</span>
+                        </div>
+                        <div class="datos-socio__fila">
+                            <span class="datos-socio__etiqueta">Documento</span>
+                            <span class="datos-socio__valor" id="socioDocumento">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-continuar" id="btnContinuar" onclick="continuar()" disabled>
+                    Siguiente →
+                </button>
+            </div>
+        </div>
+
+        <!-- PASO 2: Selección de departamento -->
+        <div class="form-step" id="step2">
+            <div class="departments-grid" id="departmentsGrid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+            <!-- Atención preferencial (Ley 4934) -->
+            <div class="preferencial-caja">
+                <p class="preferencial-caja__titulo">¿Necesita atención preferencial?</p>
+                <div class="preferencial-opciones">
+                    <button type="button" class="preferencial-btn" data-motivo="adulto_mayor"
+                        onclick="alternarPrioridad('adulto_mayor')">
+                        <span class="preferencial-btn__icono">🧓</span>
+                        <span>Adulto mayor</span>
+                    </button>
+                    <button type="button" class="preferencial-btn" data-motivo="embarazada"
+                        onclick="alternarPrioridad('embarazada')">
+                        <span class="preferencial-btn__icono">🤰</span>
+                        <span>Embarazada</span>
+                    </button>
+                    <button type="button" class="preferencial-btn" data-motivo="discapacidad"
+                        onclick="alternarPrioridad('discapacidad')">
+                        <span class="preferencial-btn__icono">♿</span>
+                        <span>Discapacidad</span>
+                    </button>
+                </div>
+                <p class="preferencial-caja__nota" id="preferencialNota">
+                    Si corresponde, toque una opción y luego elija el área.
+                </p>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button
+                    style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text-muted); padding: 10px 20px; border-radius: 8px; cursor: pointer;"
+                    onclick="volver()">
+                    ← No soy yo / Volver
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de ticket generado -->
+    <div class="modal-overlay" id="ticketModal">
+        <div class="ticket-modal">
+            {% if logo_url %}
+            <img src="{{ logo_url }}" alt="Cooperativa Reducto Ltda." class="ticket-modal__logo">
+            {% endif %}
+            <div class="ticket-modal__icon" id="modalIcon">🎫</div>
+            <div class="ticket-modal__preferencial" id="modalPreferencial" style="display:none;"></div>
+            <h2 class="ticket-modal__title">Su número de ticket</h2>
+            <div class="ticket-modal__number" id="modalNumber">---</div>
+            <p class="ticket-modal__dept" id="modalDept">Departamento</p>
+            <div class="ticket-modal__socio-info" id="modalSocioInfo">
+                <!-- Info del socio -->
+            </div>
+
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">
+                Por favor, tome asiento y espere a ser llamado.<br>
+                Su número aparecerá en la pantalla de la sala de espera.
+            </p>
+            <div class="ticket-modal__buttons">
+                <button class="btn-imprimir" onclick="imprimirTicket()">
+                    🖨️ Imprimir Ticket
+                </button>
+                <button class="ticket-modal__close" onclick="closeModal()">
+                    ✓ Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let datosFormulario = {
+            nombre: '',
+            dni: '',
+            esSocio: false,
+            numeroSocio: null
+        };
+        let ticketActual = null;
+        let busquedaTimeout = null;
+        let busquedaPendiente = null;   // consulta al padrón en curso
+        let dniBuscado = null;          // cédula de esa consulta
+        let prioridadElegida = null;    // motivo de atención preferencial
+
+        const TEXTOS_PRIORIDAD = {
+            adulto_mayor: 'Adulto mayor',
+            embarazada: 'Embarazada',
+            discapacidad: 'Persona con discapacidad'
+        };
+
+        function alternarPrioridad(motivo) {
+            // Se puede desmarcar tocando de nuevo, por si fue sin querer
+            prioridadElegida = (prioridadElegida === motivo) ? null : motivo;
+
+            document.querySelectorAll('.preferencial-btn').forEach(b => {
+                b.classList.toggle('activo', b.dataset.motivo === prioridadElegida);
+            });
+
+            const nota = document.getElementById('preferencialNota');
+            if (prioridadElegida) {
+                nota.textContent = `Atención preferencial: ${TEXTOS_PRIORIDAD[prioridadElegida]}. `
+                    + 'Ahora elija el área.';
+                nota.classList.add('activa');
+            } else {
+                nota.textContent = 'Si corresponde, toque una opción y luego elija el área.';
+                nota.classList.remove('activa');
+            }
+        }
+
+        // Cargar departamentos al iniciar
+        document.addEventListener('DOMContentLoaded', loadDepartamentos);
+
+        function pressKey(key) {
+            const input = document.getElementById('dniSocio');
+            let currentVal = input.value;
+
+            if (key === 'C') {
+                input.value = '';
+            } else if (key === 'DEL') {
+                input.value = currentVal.slice(0, -1);
+            } else {
+                if (currentVal.length < 10) {
+                    input.value += key;
+                }
+            }
+
+            // Disparar evento input manualmente para activar la búsqueda
+            input.dispatchEvent(new Event('input'));
+        }
+
+        // Se busca a partir de la misma cantidad de dígitos con la que se
+        // habilita 'Siguiente'. Si fueran distintos, habría cédulas que el socio
+        // puede enviar pero que el sistema nunca consulta en el padrón.
+        const LARGO_MINIMO_CEDULA = 5;
+
+        function mostrarEstadoBusqueda(estado) {
+            const caja = document.getElementById('estadoBusqueda');
+            if (estado === 'buscando') {
+                caja.textContent = 'Buscando sus datos...';
+                caja.className = 'estado-busqueda estado-busqueda--buscando';
+                caja.style.display = 'block';
+            } else if (estado === 'no-encontrado') {
+                caja.textContent = 'No encontramos esa cédula en el padrón. '
+                    + 'Puede continuar igual.';
+                caja.className = 'estado-busqueda estado-busqueda--aviso';
+                caja.style.display = 'block';
+            } else {
+                caja.style.display = 'none';
+            }
+        }
+
+        // Listener para el DNI (búsqueda automática al dejar de escribir)
+        document.getElementById('dniSocio').addEventListener('input', (e) => {
+            const dni = e.target.value.trim();
+            const btn = document.getElementById('btnContinuar');
+
+            // Limpiar estados previos
+            document.getElementById('welcomeArea').style.display = 'none';
+            datosFormulario.nombre = '';
+            datosFormulario.esSocio = false;
+            datosFormulario.numeroSocio = null;
+            btn.disabled = dni.length < LARGO_MINIMO_CEDULA;
+
+            clearTimeout(busquedaTimeout);
+            busquedaPendiente = null;
+            dniBuscado = null;
+
+            if (dni.length >= LARGO_MINIMO_CEDULA) {
+                mostrarEstadoBusqueda('buscando');
+                busquedaTimeout = setTimeout(() => {
+                    busquedaPendiente = buscarSocio(dni);
+                }, 350);
+            } else {
+                mostrarEstadoBusqueda(null);
+            }
+        });
+
+        async function buscarSocio(dni) {
+            dniBuscado = dni;
+            try {
+                const response = await fetch(`/api/socios/buscar?dni=${encodeURIComponent(dni)}`);
+                const socio = await response.json();
+
+                // Si el socio siguió tecleando, esta respuesta ya no corresponde
+                if (document.getElementById('dniSocio').value.trim() !== dni) {
+                    return false;
+                }
+
+                const welcomeArea = document.getElementById('welcomeArea');
+                const nombreLabel = document.getElementById('socioNombre');
+                const btn = document.getElementById('btnContinuar');
+
+                btn.disabled = false;
+
+                if (socio) {
+                    // Socio encontrado: mostramos nombre, N° de socio y documento
+                    datosFormulario.nombre = `${socio.nombre} ${socio.apellido}`;
+                    datosFormulario.esSocio = true;
+                    datosFormulario.numeroSocio = socio.numero_socio || null;
+
+                    nombreLabel.textContent = datosFormulario.nombre;
+                    document.getElementById('socioDocumento').textContent = dni;
+
+                    // Algunos socios pueden no tener número cargado en el padrón
+                    const filaNro = document.getElementById('filaNumeroSocio');
+                    if (datosFormulario.numeroSocio) {
+                        document.getElementById('socioNumero').textContent =
+                            datosFormulario.numeroSocio;
+                        filaNro.style.display = 'flex';
+                    } else {
+                        filaNro.style.display = 'none';
+                    }
+
+                    welcomeArea.style.display = 'block';
+                    mostrarEstadoBusqueda(null);
+
+                    // Más tiempo en pantalla: el socio tiene que poder leer sus datos
+                    setTimeout(() => {
+                        if (document.getElementById('step1').classList.contains('active')) {
+                            continuar();
+                        }
+                    }, 3000);
+                    return true;
+                }
+
+                // No está en el padrón: se le avisa y puede seguir igual.
+                // No auto-avanzamos, porque la cédula puede tener más dígitos
+                // y el socio todavía estaría tecleando.
+                datosFormulario.nombre = '';
+                datosFormulario.esSocio = false;
+                datosFormulario.numeroSocio = null;
+                welcomeArea.style.display = 'none';
+                mostrarEstadoBusqueda('no-encontrado');
+                return false;
+            } catch (error) {
+                console.error('Error buscando socio:', error);
+                // Un fallo de red no debe dejar al socio sin poder sacar turno
+                document.getElementById('btnContinuar').disabled = false;
+                mostrarEstadoBusqueda(null);
+                return false;
+            }
+        }
+
+        async function continuar() {
+            const dni = document.getElementById('dniSocio').value.trim();
+
+            if (dni.length < LARGO_MINIMO_CEDULA) {
+                return;
+            }
+
+            // Si el socio apretó 'Siguiente' antes de que llegara la consulta al
+            // padrón, se espera el resultado en vez de avanzar sin sus datos.
+            // Ese era el motivo por el que a veces no aparecía ni el nombre ni
+            // el N° de socio: el kiosco se adelantaba a su propia búsqueda.
+            if (dniBuscado !== dni) {
+                clearTimeout(busquedaTimeout);
+                busquedaPendiente = buscarSocio(dni);
+            }
+
+            if (busquedaPendiente) {
+                let encontrado = false;
+                try {
+                    encontrado = await busquedaPendiente;
+                } catch (e) {
+                    encontrado = false;
+                }
+                // Si acabamos de encontrarlo, se le da un momento para verse
+                // en pantalla antes de pasar a elegir el departamento.
+                if (encontrado) {
+                    await new Promise(r => setTimeout(r, 1400));
+                    if (!document.getElementById('step1').classList.contains('active')) {
+                        return;   // el auto-avance ya se ocupó
+                    }
+                }
+            }
+
+            // El nombre es opcional: si el socio está en el padrón ya lo tenemos,
+            // y si no, el turno se emite igual con la cédula.
+            datosFormulario.dni = dni;
+
+            // Cambiar a paso 2
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('step2').classList.add('active');
+            document.getElementById('stepTitle').textContent = 'Seleccione el motivo de su visita';
+            document.getElementById('dot1').classList.add('completed');
+            document.getElementById('dot1').classList.remove('active');
+            document.getElementById('dot2').classList.add('active');
+        }
+
+        function volver() {
+            document.getElementById('step2').classList.remove('active');
+            document.getElementById('step1').classList.add('active');
+            document.getElementById('stepTitle').textContent = 'Ingrese su número de cédula para continuar';
+            document.getElementById('dot1').classList.remove('completed');
+            document.getElementById('dot1').classList.add('active');
+            document.getElementById('dot2').classList.remove('active');
+
+            // Reiniciar campos y toda consulta al padrón que estuviera en curso,
+            // para que el próximo socio no vea rastros del anterior
+            document.getElementById('dniSocio').value = '';
+            document.getElementById('welcomeArea').style.display = 'none';
+            document.getElementById('btnContinuar').disabled = true;
+            mostrarEstadoBusqueda(null);
+            clearTimeout(busquedaTimeout);
+            busquedaPendiente = null;
+            dniBuscado = null;
+            datosFormulario = { nombre: '', dni: '', esSocio: false, numeroSocio: null };
+
+            // La preferencia es de cada socio: no se arrastra al siguiente
+            if (prioridadElegida) {
+                alternarPrioridad(prioridadElegida);
+            }
+        }
+
+        async function loadDepartamentos() {
+            try {
+                const response = await fetch('/api/departamentos');
+                const departamentos = await response.json();
+                renderDepartamentos(departamentos);
+            } catch (error) {
+                console.error('Error cargando departamentos:', error);
+                document.getElementById('departmentsGrid').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state__icon">⚠️</div>
+                        <p class="empty-state__text">Error al cargar los departamentos</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderDepartamentos(departamentos) {
+            const grid = document.getElementById('departmentsGrid');
+
+            if (departamentos.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state__icon">📋</div>
+                        <p class="empty-state__text">No hay departamentos configurados</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = departamentos.map(dept => `
+                <div class="department-card" 
+                     data-dept="${dept.codigo.toLowerCase()}"
+                     style="--card-color: ${dept.color}"
+                     onclick="generarTicket(${dept.id}, '${dept.nombre}', '${dept.icono}', '${dept.color}')">
+                    <span class="department-card__icon">${dept.icono}</span>
+                    <h3 class="department-card__name">${dept.nombre}</h3>
+                    <span class="department-card__code">Código: ${dept.codigo}</span>
+                </div>
+            `).join('');
+        }
+
+        async function generarTicket(departamentoId, nombre, icono, color) {
+            try {
+                const response = await fetch('/api/tickets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        departamento_id: departamentoId,
+                        nombre_socio: datosFormulario.nombre,
+                        dni_socio: datosFormulario.dni,
+                        numero_socio: datosFormulario.numeroSocio,
+                        prioridad: prioridadElegida
+                    })
+                });
+
+                if (!response.ok) throw new Error('Error al generar ticket');
+
+                const ticket = await response.json();
+                ticketActual = { ...ticket, deptNombre: nombre, icono, color };
+                showTicketModal(ticket, nombre, icono, color);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al generar el ticket. Por favor intente de nuevo.');
+            }
+        }
+
+        // El nombre viene del padrón, pero igual se escapa antes de insertarlo
+        // como HTML: nunca se confía en un dato para armar markup.
+        function escaparHtml(texto) {
+            const d = document.createElement('div');
+            d.textContent = texto == null ? '' : String(texto);
+            return d.innerHTML;
+        }
+
+        function showTicketModal(ticket, deptNombre, icono, color) {
+            const modal = document.getElementById('ticketModal');
+            document.getElementById('modalIcon').textContent = icono;
+            document.getElementById('modalNumber').textContent = ticket.codigo_completo;
+            document.getElementById('modalNumber').style.setProperty('--ticket-color', color);
+            document.getElementById('modalDept').textContent = deptNombre;
+
+            // Los datos salen de datosFormulario, no de la respuesta del servidor:
+            // el endpoint público del kiosco no devuelve datos personales.
+            const filas = [];
+            if (datosFormulario.nombre) {
+                filas.push(`<strong>👤</strong> ${escaparHtml(datosFormulario.nombre)}`);
+            }
+            if (datosFormulario.numeroSocio) {
+                filas.push(`<strong>🆔</strong> N° de socio: ${escaparHtml(datosFormulario.numeroSocio)}`);
+            }
+            if (datosFormulario.dni) {
+                filas.push(`<strong>🪪</strong> Documento: ${escaparHtml(datosFormulario.dni)}`);
+            }
+            document.getElementById('modalSocioInfo').innerHTML =
+                filas.join('<br>') || 'Sin datos del socio';
+
+            // Insignia de atención preferencial
+            const insignia = document.getElementById('modalPreferencial');
+            if (ticket.prioridad_texto) {
+                insignia.textContent = '★ ATENCIÓN PREFERENCIAL — ' + ticket.prioridad_texto;
+                insignia.style.display = 'inline-block';
+            } else {
+                insignia.style.display = 'none';
+            }
+
+            modal.classList.add('active');
+        }
+
+        function imprimirTicket() {
+            if (!ticketActual) return;
+
+            // Guardar datos del ticket en localStorage
+            const ticketData = {
+                codigo_completo: ticketActual.codigo_completo,
+                departamento: ticketActual.deptNombre,
+                nombre_socio: datosFormulario.nombre,
+                dni_socio: datosFormulario.dni,
+                numero_socio: datosFormulario.numeroSocio,
+                prioridad_texto: ticketActual.prioridad_texto
+            };
+
+            localStorage.setItem('ticketParaImprimir', JSON.stringify(ticketData));
+
+            // Abrir página de impresión en nueva pestaña
+            window.open('/imprimir_ticket', '_blank');
+        }
+
+        function closeModal() {
+            document.getElementById('ticketModal').classList.remove('active');
+            volver();
+        }
+
+        // Enter para continuar
+        document.getElementById('dniSocio').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !document.getElementById('btnContinuar').disabled) {
+                continuar();
+            }
+        });
+    </script>
+</body>
+
+</html>

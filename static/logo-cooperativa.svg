@@ -1,0 +1,138 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="Cooperativa Reducto Ltda. de Microfinanza">
+  <title>Cooperativa Reducto Ltda. - de Microfinanza</title>
+  <defs>
+    <!-- Aro metalico exterior -->
+    <linearGradient id="aroMetal" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="18%" stop-color="#cbd5e1"/>
+      <stop offset="38%" stop-color="#8d9aa8"/>
+      <stop offset="55%" stop-color="#e8edf2"/>
+      <stop offset="75%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+
+    <linearGradient id="fondoVerde" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5cd67f"/>
+      <stop offset="50%" stop-color="#3cc45f"/>
+      <stop offset="100%" stop-color="#1faf47"/>
+    </linearGradient>
+
+    <linearGradient id="oro" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ffe94d"/>
+      <stop offset="55%" stop-color="#ffdf1f"/>
+      <stop offset="100%" stop-color="#f5c800"/>
+    </linearGradient>
+
+    <pattern id="puntitos" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="2.2" fill="#0f8a37" opacity="0.30"/>
+    </pattern>
+
+    <clipPath id="dentroDelCirculo">
+      <circle cx="256" cy="256" r="232"/>
+    </clipPath>
+  </defs>
+
+  <!-- ===== Aro ===== -->
+  <circle cx="256" cy="256" r="254" fill="url(#aroMetal)"/>
+  <circle cx="256" cy="256" r="236" fill="#b8c2cc"/>
+
+  <!-- ===== Fondo ===== -->
+  <g clip-path="url(#dentroDelCirculo)">
+    <circle cx="256" cy="256" r="232" fill="url(#fondoVerde)"/>
+
+    <!-- Franjas diagonales claras -->
+    <g fill="#ffffff" opacity="0.16">
+      <polygon points="-40,150 40,60 150,-60 60,-60"/>
+      <polygon points="90,-60 160,-60 -40,290 -40,215"/>
+      <polygon points="215,-60 250,-60 40,340 5,340"/>
+      <polygon points="470,120 540,190 330,560 260,560"/>
+      <polygon points="500,300 545,350 400,560 355,560"/>
+    </g>
+    <!-- Franjas diagonales oscuras -->
+    <g fill="#0f8a37" opacity="0.20">
+      <polygon points="175,-60 215,-60 10,340 -30,340"/>
+      <polygon points="300,-60 330,-60 120,400 90,400"/>
+      <polygon points="520,215 545,250 380,560 350,560"/>
+    </g>
+
+    <!-- Tramas de puntos -->
+    <rect x="60" y="40" width="120" height="90" fill="url(#puntitos)" opacity="0.75"/>
+    <rect x="330" y="360" width="140" height="110" fill="url(#puntitos)" opacity="0.75"/>
+  </g>
+
+  <!-- ===== Triangulo dorado ===== -->
+  <polygon points="256,54 462,398 50,398" fill="url(#oro)"/>
+
+  <!-- Divisiones internas -->
+  <g stroke="#2fb352" stroke-width="8" stroke-linecap="round">
+    <line x1="150" y1="232" x2="362" y2="232"/>
+    <line x1="97" y1="322" x2="415" y2="322"/>
+    <line x1="256" y1="232" x2="256" y2="322"/>
+  </g>
+
+  <!-- ===== Emblema superior: planta dentro de un circulo ===== -->
+  <g>
+    <circle cx="256" cy="150" r="54" fill="none" stroke="#2fb352" stroke-width="8"/>
+    <!-- tallo -->
+    <path d="M256 118 V 200" stroke="#2fb352" stroke-width="12" stroke-linecap="round"/>
+    <!-- hojas: dos arcos que abren hacia arriba -->
+    <path d="M256 150 C 256 118, 232 104, 214 104 C 214 132, 234 150, 256 150 Z"
+          fill="#2fb352"/>
+    <path d="M256 150 C 256 118, 280 104, 298 104 C 298 132, 278 150, 256 150 Z"
+          fill="#2fb352"/>
+    <!-- base -->
+    <path d="M232 200 H 280" stroke="#2fb352" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <!-- ===== Celda izquierda: carreta tirada por caballo ===== -->
+  <g fill="#14532d">
+    <!-- caballo -->
+    <path d="M212 300
+             c 2 -13 9 -22 20 -25
+             l 9 -14 c 3 -5 10 -3 8 3
+             l -4 10 c 11 3 16 11 17 21
+             l 1 8 -9 0 -2 -10 -8 0 1 12 -8 0 -2 -12 -16 0 -1 12 -8 0 z"/>
+    <!-- patas -->
+    <rect x="216" y="298" width="4" height="12" rx="1.5"/>
+    <rect x="243" y="298" width="4" height="12" rx="1.5"/>
+    <!-- carro -->
+    <rect x="140" y="272" width="52" height="18" rx="2"/>
+    <path d="M192 280 L 214 288 L 214 294 L 192 294 Z"/>
+    <circle cx="153" cy="300" r="11" fill="none" stroke="#14532d" stroke-width="4.5"/>
+    <circle cx="181" cy="300" r="11" fill="none" stroke="#14532d" stroke-width="4.5"/>
+    <!-- carretero -->
+    <circle cx="163" cy="258" r="7"/>
+    <path d="M157 266 h 13 l 3 8 h -19 z"/>
+  </g>
+
+  <!-- ===== Celda derecha: mujer con cesta de frutas ===== -->
+  <g>
+    <!-- cesta -->
+    <path d="M296 262 h 52 l -8 20 h -36 z" fill="#14532d"/>
+    <!-- frutas -->
+    <circle cx="306" cy="256" r="7" fill="#14532d"/>
+    <circle cx="322" cy="252" r="8" fill="#14532d"/>
+    <circle cx="338" cy="256" r="7" fill="#14532d"/>
+    <!-- figura: cabeza, brazo levantado y falda larga -->
+    <g fill="#14532d">
+      <circle cx="322" cy="294" r="10"/>
+      <path d="M312 300 c -4 3 -6 8 -6 14 l 0 4 6 0 0 -10 z"/>
+      <path d="M322 304 c -14 0 -20 12 -22 28 l -4 26 52 0 -4 -26 c -2 -16 -8 -28 -22 -28 z"/>
+    </g>
+  </g>
+
+  <!-- ===== Texto institucional =====
+       textLength fija el ancho: asi el texto nunca se desborda del circulo,
+       sin importar que fuente resuelva el navegador. -->
+  <text x="256" y="360" text-anchor="middle"
+        font-family="'Segoe Script', 'Brush Script MT', Georgia, serif"
+        font-size="46" font-style="italic" font-weight="bold" fill="#ffffff"
+        textLength="368" lengthAdjust="spacingAndGlyphs"
+        stroke="#0f8a37" stroke-width="1.2" paint-order="stroke">Cooperativa Reducto Ltda.</text>
+
+  <text x="330" y="398" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="27" fill="#ffffff"
+        textLength="176" lengthAdjust="spacingAndGlyphs">de Microfinanza</text>
+</svg>

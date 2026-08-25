@@ -1,0 +1,17 @@
+﻿Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+SQLAlchemy==2.0.52
+Werkzeug==3.1.8
+
+# Servidor de produccion para Windows (el de Flask es solo para desarrollo)
+waitress==3.0.2
+
+# Acceso SSH al servidor remoto (opcional, solo para ssh_manager.py)
+paramiko==5.0.0
+
+# Solo hace falta si se expone la API a otro dominio (TIKETERA_CORS_ORIGINS).
+# La version 4.0.0 tiene vulnerabilidades conocidas; se recomienda 6.x.
+Flask-Cors==6.0.0
+
+

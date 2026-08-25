@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel del Operador - Cooperativa</title>
+    <meta name="description" content="Panel de control para operadores de atención">
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header" style="padding: 20px 20px 10px; margin-bottom: 20px; position: relative;">
+            <div style="position: absolute; top: 20px; right: 20px; display: flex; align-items: center; gap: 15px;">
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">👤 {{ usuario.nombre }}</span>
+                <a href="{{ url_for('logout') }}" class="btn--outline"
+                    style="text-decoration: none; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem;">
+                    Salir
+                </a>
+            </div>
+            <h1 class="header__title" style="font-size: 1.8rem;">
+                {% if logo_url %}<img src="{{ logo_url }}" alt="" style="height: 34px; vertical-align: -8px; margin-right: 8px;">{% endif %}Panel del Operador
+            </h1>
+            <p class="header__subtitle">
+                Gestión de turnos de atención
+                {% if usuario.puesto %}
+                <span
+                    style="background: var(--primary); color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; margin-left: 10px;">{{ usuario.puesto }}</span>
+                {% else %}
+                <span
+                    style="background: #b45309; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; margin-left: 10px;"
+                    title="Asigne un puesto para que el socio sepa a qué ventanilla dirigirse">Sin puesto asignado</span>
+                {% endif %}
+            </p>
+        </header>
+
+        <!-- Estadísticas -->
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-card">
+                <span class="stat-card__icon">📊</span>
+                <div class="stat-card__info">
+                    <span class="stat-card__value" id="statTotal">0</span>
+                    <span class="stat-card__label">Tickets Hoy</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-card__icon">⏳</span>
+                <div class="stat-card__info">
+                    <span class="stat-card__value" id="statPendientes">0</span>
+                    <span class="stat-card__label">Pendientes</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-card__icon">✅</span>
+                <div class="stat-card__info">
+                    <span class="stat-card__value" id="statAtendidos">0</span>
+                    <span class="stat-card__label">Atendidos</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel principal -->
+        <div class="operator-panel">
+            <!-- Lista de tickets -->
+            <div>
+                <!-- Filtros por departamento -->
+                <div class="dept-filters" id="deptFilters">
+                    <button class="dept-filter active" data-dept="all" style="--filter-color: var(--primary);">
+                        📋 Todos
+                    </button>
+                </div>
+
+                <!-- Lista de tickets pendientes -->
+                <div class="tickets-list">
+                    <h3 class="tickets-list__title">
+                        📝 Tickets Pendientes
+                    </h3>
+                    <div id="ticketsList">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de acciones rápidas -->
+            <div class="quick-actions">
+                <h3 class="quick-actions__title">⚡ Acciones Rápidas</h3>
+
+                <div class="quick-actions__current" id="currentTicketPanel">
+                    <div class="quick-actions__current-label">Ticket Actual</div>
+                    <div class="quick-actions__current-number" id="currentTicketNumber">---</div>
+                    <div class="quick-actions__current-dept" id="currentTicketDept">Sin ticket llamado</div>
+                </div>
+
+                <div class="quick-actions__buttons">
+                    <button class="btn btn--success btn--lg quick-actions__btn" onclick="llamarSiguiente()">
+                        📢 Llamar Siguiente
+                    </button>
+                    <button class="btn btn--primary btn--lg quick-actions__btn" onclick="finalizarActual()"
+                        id="btnFinalizar" disabled>
+                        ✓ Finalizar Atención
+                    </button>
+                </div>
+
+                <!-- Selector de departamento para llamar -->
+                <div style="margin-top: 25px;">
+                    <label style="display: block; color: var(--text-muted); margin-bottom: 10px; font-size: 0.9rem;">
+                        Filtrar siguiente por departamento:
+                    </label>
+                    <select id="deptSelect"
+                        style="width: 100%; padding: 12px; border-radius: 10px; background: var(--bg-card-hover); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); font-size: 1rem;">
+                        <option value="">Cualquier departamento</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Identidad del operador logueado, para distinguir sus turnos de los ajenos
+        const MI_NOMBRE = {{ usuario.nombre | tojson }};
+        const MI_PUESTO = {{ (usuario.puesto or '') | tojson }};
+
+        let departamentos = [];
+        let currentTicketId = null;
+        let selectedDeptFilter = 'all';
+
+        // Cargar datos iniciales
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadDepartamentos();
+            await loadData();
+
+            // Actualizar cada 5 segundos
+            setInterval(loadData, 5000);
+        });
+
+        async function loadDepartamentos() {
+            try {
+                const response = await fetch('/api/departamentos');
+                departamentos = await response.json();
+                renderDeptFilters();
+                renderDeptSelect();
+            } catch (error) {
+                console.error('Error cargando departamentos:', error);
+            }
+        }
+
+        function renderDeptFilters() {
+            const container = document.getElementById('deptFilters');
+            container.innerHTML = `
+                <button class="dept-filter active" data-dept="all" onclick="setFilter('all')" style="--filter-color: var(--primary);">
+                    📋 Todos
+                </button>
+                ${departamentos.map(dept => `
+                    <button class="dept-filter" data-dept="${dept.id}" onclick="setFilter(${dept.id})" style="--filter-color: ${dept.color};">
+                        ${dept.icono} ${dept.nombre}
+                    </button>
+                `).join('')}
+            `;
+        }
+
+        function renderDeptSelect() {
+            const select = document.getElementById('deptSelect');
+            select.innerHTML = `
+                <option value="">Cualquier departamento</option>
+                ${departamentos.map(dept => `
+                    <option value="${dept.id}">${dept.icono} ${dept.nombre}</option>
+                `).join('')}
+            `;
+        }
+
+        function setFilter(deptId) {
+            selectedDeptFilter = deptId;
+
+            // Actualizar UI de filtros
+            document.querySelectorAll('.dept-filter').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.dept == deptId || (deptId === 'all' && btn.dataset.dept === 'all')) {
+                    btn.classList.add('active');
+                }
+            });
+
+            loadTickets();
+        }
+
+        async function loadData() {
+            await Promise.all([
+                loadStats(),
+                loadTickets(),
+                loadCurrentTicket()
+            ]);
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/estadisticas');
+                const stats = await response.json();
+
+                document.getElementById('statTotal').textContent = stats.total_hoy;
+                document.getElementById('statPendientes').textContent = stats.pendientes;
+                document.getElementById('statAtendidos').textContent = stats.atendidos;
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+            }
+        }
+
+        async function loadTickets() {
+            try {
+                let url = '/api/tickets/pendientes';
+                if (selectedDeptFilter !== 'all') {
+                    url += `?departamento_id=${selectedDeptFilter}`;
+                }
+
+                const response = await fetch(url);
+                const tickets = await response.json();
+                renderTickets(tickets);
+            } catch (error) {
+                console.error('Error cargando tickets:', error);
+            }
+        }
+
+        async function loadCurrentTicket() {
+            try {
+                // Solo el ticket de este puesto, no el del resto de los operadores
+                const response = await fetch('/api/tickets/mi_actual');
+                const ticket = await response.json();
+
+                const numberEl = document.getElementById('currentTicketNumber');
+                const deptEl = document.getElementById('currentTicketDept');
+                const btnFinalizar = document.getElementById('btnFinalizar');
+
+                if (ticket) {
+                    numberEl.textContent = ticket.codigo_completo;
+                    deptEl.textContent = `${ticket.departamento.icono} ${ticket.departamento.nombre}`;
+                    currentTicketId = ticket.id;
+                    btnFinalizar.disabled = false;
+                } else {
+                    numberEl.textContent = '---';
+                    deptEl.textContent = 'Sin ticket llamado';
+                    currentTicketId = null;
+                    btnFinalizar.disabled = true;
+                }
+            } catch (error) {
+                console.error('Error cargando ticket actual:', error);
+            }
+        }
+
+        function renderTickets(tickets) {
+            const container = document.getElementById('ticketsList');
+
+            if (tickets.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state__icon">🎉</div>
+                        <p class="empty-state__text">No hay tickets pendientes</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = tickets.map(ticket => {
+                const fecha = new Date(ticket.fecha_creacion);
+                const hora = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                const isLlamado = ticket.estado === 'Llamado';
+                // Un ticket llamado por otro puesto no se toca desde aquí
+                const esDeOtroPuesto = isLlamado && ticket.atendido_por
+                    && ticket.atendido_por !== MI_NOMBRE;
+
+                // Datos del socio: nombre, N° de socio y documento
+                const partes = [];
+                if (ticket.nombre_socio) partes.push(ticket.nombre_socio);
+                if (ticket.numero_socio) partes.push('Socio N° ' + ticket.numero_socio);
+                if (ticket.dni_socio) partes.push('CI ' + ticket.dni_socio);
+                const socioInfo = partes.join(' · ');
+
+                return `
+                    <div class="ticket-item ${isLlamado ? 'llamado' : ''}" style="--item-color: ${ticket.departamento.color};">
+                        <div class="ticket-item__info">
+                            <span class="ticket-item__icon">${ticket.departamento.icono}</span>
+                            <div>
+                                <div class="ticket-item__number">
+                                    ${ticket.codigo_completo}
+                                    ${ticket.prioridad_texto ? `<span style="background:#f59e0b;color:#1c1917;font-size:0.7rem;font-weight:800;padding:2px 8px;border-radius:12px;margin-left:8px;vertical-align:middle;">★ ${ticket.prioridad_texto.toUpperCase()}</span>` : ''}
+                                </div>
+                                <div class="ticket-item__dept">${ticket.departamento.nombre}</div>
+                                ${socioInfo ? `<div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">👤 ${socioInfo}</div>` : ''}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="ticket-item__time">${hora}</div>
+                            <div class="ticket-item__actions">
+                                ${esDeOtroPuesto ? `
+                                    <span style="font-size: 0.8rem; color: var(--text-muted);">
+                                        En ${ticket.puesto_atencion || ticket.atendido_por}
+                                    </span>
+                                ` : isLlamado ? `
+                                    <button class="btn btn--primary" onclick="finalizarTicket(${ticket.id})">
+                                        ✓ Finalizar
+                                    </button>
+                                ` : `
+                                    <button class="btn btn--success" onclick="llamarTicket(${ticket.id})">
+                                        📢 Llamar
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function llamarTicket(id) {
+            try {
+                const response = await fetch(`/api/tickets/${id}/llamar`, { method: 'PUT' });
+                if (!response.ok) {
+                    // Ej: 409 cuando otro puesto ya está atendiendo ese turno
+                    const error = await response.json();
+                    alert(error.error || 'No se pudo llamar el ticket');
+                }
+                await loadData();
+            } catch (error) {
+                console.error('Error llamando ticket:', error);
+                alert('Error al llamar el ticket');
+            }
+        }
+
+        async function finalizarTicket(id) {
+            try {
+                const response = await fetch(`/api/tickets/${id}/finalizar`, { method: 'PUT' });
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(error.error || 'No se pudo finalizar el ticket');
+                }
+                await loadData();
+            } catch (error) {
+                console.error('Error finalizando ticket:', error);
+                alert('Error al finalizar el ticket');
+            }
+        }
+
+        async function llamarSiguiente() {
+            try {
+                const deptId = document.getElementById('deptSelect').value;
+                const body = deptId ? { departamento_id: parseInt(deptId) } : {};
+
+                const response = await fetch('/api/tickets/siguiente', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                const result = await response.json();
+
+                if (result.message === 'No hay tickets pendientes') {
+                    alert('No hay tickets pendientes en cola');
+                }
+
+                await loadData();
+            } catch (error) {
+                console.error('Error llamando siguiente:', error);
+                alert('Error al llamar siguiente ticket');
+            }
+        }
+
+        async function finalizarActual() {
+            if (currentTicketId) {
+                await finalizarTicket(currentTicketId);
+            }
+        }
+    </script>
+</body>
+
+</html>
