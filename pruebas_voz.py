@@ -56,7 +56,7 @@ visible = p.js("document.getElementById('activarSonido').classList.contains('vis
 check('muestra el aviso para activarlo', visible is True)
 check('el indicador esta en mudo',
       p.js("document.getElementById('indicadorSonido').textContent") == '🔇')
-p.captura(os.path.join(AQUI, 'shots', 'v_activar.png'))
+p.captura(os.path.join(AQUI, 'capturas', 'v_activar.png'))
 
 print("\n[5] Al tocar la pantalla se desbloquea")
 # Un .click() desde JavaScript NO cuenta como gesto del usuario: el navegador
