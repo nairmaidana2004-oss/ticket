@@ -9,6 +9,61 @@
     <link rel="stylesheet" href="/static/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet">
+    <style>
+        /* Alerta de cola: tiene que verse sin buscarla, pero sin tapar el panel */
+        .alerta-cola {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(245, 158, 11, 0.14);
+            border: 2px solid #f59e0b;
+            border-radius: 14px;
+            padding: 14px 18px;
+            margin-bottom: 18px;
+            animation: latido-alerta 2.2s ease-in-out infinite;
+        }
+
+        @keyframes latido-alerta {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35);
+            }
+
+            50% {
+                box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+            }
+        }
+
+        .alerta-cola__icono {
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .alerta-cola__titulo {
+            font-weight: 800;
+            font-size: 1.05rem;
+            color: #fde68a;
+        }
+
+        .alerta-cola__detalle {
+            color: var(--text-secondary);
+            font-size: .9rem;
+            margin-top: 2px;
+        }
+
+        .alerta-cola__cifra {
+            margin-left: auto;
+            text-align: right;
+            line-height: 1.15;
+        }
+
+        .alerta-cola__cifra strong {
+            font-size: 1.7rem;
+            display: block;
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
 </head>
 
 <body>
@@ -37,6 +92,9 @@
                 {% endif %}
             </p>
         </header>
+
+        <!-- Alertas de cola -->
+        <div id="alertasCola"></div>
 
         <!-- Estadísticas -->
         <div class="stats-bar" id="statsBar">
@@ -192,8 +250,53 @@
             await Promise.all([
                 loadStats(),
                 loadTickets(),
-                loadCurrentTicket()
+                loadCurrentTicket(),
+                loadAlertas()
             ]);
+        }
+
+        async function loadAlertas() {
+            try {
+                const r = await fetch('/api/alertas');
+                if (!r.ok) return;
+                const datos = await r.json();
+                const caja = document.getElementById('alertasCola');
+
+                const enAlerta = datos.colas.filter(c => c.alerta);
+                if (!enAlerta.length) {
+                    caja.innerHTML = '';
+                    return;
+                }
+
+                caja.innerHTML = enAlerta.map(c => {
+                    const porQue = [];
+                    if (c.motivos.includes('espera'))
+                        porQue.push(`alguien lleva ${c.espera_maxima} min esperando`);
+                    if (c.motivos.includes('cola'))
+                        porQue.push(`${c.en_espera} personas en cola`);
+                    return `
+                        <div class="alerta-cola">
+                            <span class="alerta-cola__icono">⚠️</span>
+                            <div>
+                                <div class="alerta-cola__titulo">
+                                    Cola de ${c.departamento}
+                                </div>
+                                <div class="alerta-cola__detalle">
+                                    ${porQue.join(' · ')} —
+                                    umbral: ${datos.umbral_espera} min o ${datos.umbral_cola} personas
+                                </div>
+                            </div>
+                            <div class="alerta-cola__cifra" style="color:${c.color}">
+                                <strong>${c.en_espera}</strong>
+                                <span style="font-size:.78rem; color:var(--text-secondary)">
+                                    esperando
+                                </span>
+                            </div>
+                        </div>`;
+                }).join('');
+            } catch (e) {
+                console.error('Error cargando alertas:', e);
+            }
         }
 
         async function loadStats() {

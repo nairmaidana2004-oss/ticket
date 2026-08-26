@@ -15,3 +15,6 @@ paramiko==5.0.0
 Flask-Cors==6.0.0
 
 
+
+# Lectura de Excel para importar el padron de socios
+openpyxl==3.1.5

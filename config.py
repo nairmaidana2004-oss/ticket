@@ -60,6 +60,28 @@ class Config:
     AUTO_CALL_ENABLED = os.environ.get('TIKETERA_AUTO_CALL', '0') == '1'
     AUTO_CALL_INTERVAL = int(os.environ.get('TIKETERA_AUTO_CALL_INTERVAL', '300'))
 
+    # Alertas de cola: avisan ANTES de que la espera se dispare, para poder
+    # abrir otra ventanilla a tiempo.
+    ALERTA_ESPERA_MIN = int(os.environ.get('TIKETERA_ALERTA_ESPERA', '20'))
+    ALERTA_COLA = int(os.environ.get('TIKETERA_ALERTA_COLA', '10'))
+
+    # Horario de atencion. Fuera de el, el kiosco no emite turnos.
+    # Formato: "HH:MM-HH:MM" por dia, o vacio para cerrado.
+    HORARIO = {
+        0: os.environ.get('TIKETERA_HORARIO_LUN', '07:00-17:00'),
+        1: os.environ.get('TIKETERA_HORARIO_MAR', '07:00-17:00'),
+        2: os.environ.get('TIKETERA_HORARIO_MIE', '07:00-17:00'),
+        3: os.environ.get('TIKETERA_HORARIO_JUE', '07:00-17:00'),
+        4: os.environ.get('TIKETERA_HORARIO_VIE', '07:00-17:00'),
+        5: os.environ.get('TIKETERA_HORARIO_SAB', '07:00-12:00'),
+        6: os.environ.get('TIKETERA_HORARIO_DOM', ''),
+    }
+    # Minutos antes del cierre en que se deja de emitir. Evita que alguien
+    # saque turno para un tramite que no se va a alcanzar a atender.
+    CORTE_ANTES_DEL_CIERRE = int(os.environ.get('TIKETERA_CORTE_CIERRE', '15'))
+    # Con el horario apagado el sistema emite turnos a cualquier hora
+    HORARIO_ACTIVO = os.environ.get('TIKETERA_HORARIO_ACTIVO', '1') == '1'
+
     # Origenes permitidos para CORS. Vacio = mismo origen unicamente.
     CORS_ORIGINS = [
         o.strip() for o in os.environ.get('TIKETERA_CORS_ORIGINS', '').split(',')

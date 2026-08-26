@@ -140,6 +140,59 @@
             }
         }
 
+        /* Pantalla de cerrado: tapa todo para que nadie intente sacar turno */
+        .cerrado {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-gradient);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+            z-index: 900;
+        }
+
+        .cerrado.activo {
+            display: flex;
+        }
+
+        .cerrado__logo {
+            width: 150px;
+            height: auto;
+            margin-bottom: 28px;
+            opacity: .9;
+        }
+
+        .cerrado__titulo {
+            font-size: 3.4rem;
+            font-weight: 900;
+            margin-bottom: 14px;
+        }
+
+        .cerrado__motivo {
+            font-size: 1.7rem;
+            color: rgba(255, 255, 255, .9);
+            margin-bottom: 26px;
+            max-width: 780px;
+            line-height: 1.4;
+        }
+
+        .cerrado__proximo {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: rgba(0, 0, 0, .28);
+            padding: 16px 34px;
+            border-radius: 16px;
+        }
+
+        .cerrado__horario {
+            margin-top: 30px;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
         /* Atención preferencial (Ley 4934) */
         .preferencial-caja {
             margin-top: 26px;
@@ -488,6 +541,17 @@
         </div>
     </div>
 
+    <!-- Pantalla de fuera de horario -->
+    <div class="cerrado" id="pantallaCerrado">
+        {% if logo_url %}
+        <img src="{{ logo_url }}" alt="Cooperativa Reducto Ltda." class="cerrado__logo">
+        {% endif %}
+        <div class="cerrado__titulo" id="cerradoTitulo">Cerrado</div>
+        <p class="cerrado__motivo" id="cerradoMotivo"></p>
+        <div class="cerrado__proximo" id="cerradoProximo" style="display:none;"></div>
+        <p class="cerrado__horario" id="cerradoHorario"></p>
+    </div>
+
     <!-- Modal de ticket generado -->
     <div class="modal-overlay" id="ticketModal">
         <div class="ticket-modal">
@@ -557,7 +621,56 @@
         }
 
         // Cargar departamentos al iniciar
-        document.addEventListener('DOMContentLoaded', loadDepartamentos);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDepartamentos();
+            revisarHorario();
+        });
+
+        const MOTIVOS_CIERRE = {
+            cerrado_hoy: 'Hoy no hay atención al público.',
+            antes_de_abrir: 'Todavía no comenzó la atención.',
+            cerrado: 'La atención de hoy ya terminó.',
+            por_cerrar: 'Estamos por cerrar, así que ya no se emiten turnos.',
+        };
+
+        async function revisarHorario() {
+            try {
+                const r = await fetch('/api/horario');
+                const h = await r.json();
+                const pantalla = document.getElementById('pantallaCerrado');
+
+                if (h.emite) {
+                    pantalla.classList.remove('activo');
+                    return;
+                }
+
+                document.getElementById('cerradoTitulo').textContent =
+                    h.motivo === 'por_cerrar' ? 'Ya no emitimos turnos' : 'Cerrado';
+                document.getElementById('cerradoMotivo').textContent =
+                    MOTIVOS_CIERRE[h.motivo] || 'Fuera del horario de atención.';
+
+                const prox = document.getElementById('cerradoProximo');
+                if (h.proximo) {
+                    prox.textContent = `Lo esperamos ${h.proximo}`;
+                    prox.style.display = 'block';
+                } else {
+                    prox.style.display = 'none';
+                }
+
+                document.getElementById('cerradoHorario').textContent =
+                    h.apertura ? `Horario de hoy: ${h.apertura} a ${h.cierre}` : '';
+
+                pantalla.classList.add('activo');
+            } catch (e) {
+                // Si falla la consulta no se bloquea el kiosco: el servidor
+                // igual rechaza los turnos fuera de horario.
+                console.error('Error consultando el horario:', e);
+            }
+        }
+
+        // Se revisa cada minuto: al llegar la hora de cierre la pantalla
+        // aparece sola, sin que nadie tenga que tocar el kiosco.
+        setInterval(revisarHorario, 60000);
 
         function pressKey(key) {
             const input = document.getElementById('dniSocio');
@@ -818,7 +931,16 @@
                     })
                 });
 
-                if (!response.ok) throw new Error('Error al generar ticket');
+                if (!response.ok) {
+                    const error = await response.json();
+                    if (error.fuera_de_horario) {
+                        // El servidor rechazó por horario: se muestra la
+                        // pantalla de cerrado en vez de un error genérico
+                        revisarHorario();
+                        return;
+                    }
+                    throw new Error(error.error || 'Error al generar ticket');
+                }
 
                 const ticket = await response.json();
                 ticketActual = { ...ticket, deptNombre: nombre, icono, color };

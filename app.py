@@ -97,6 +97,128 @@ def filtro_dia(query, dia=None):
     return query.filter(Ticket.fecha_creacion >= inicio, Ticket.fecha_creacion < fin)
 
 
+# ==================== HORARIO DE ATENCIÓN ====================
+
+def _franja_del_dia(dia_semana):
+    """Devuelve (apertura, cierre) como time, o None si ese día está cerrado."""
+    texto = (app.config['HORARIO'].get(dia_semana) or '').strip()
+    if not texto or '-' not in texto:
+        return None
+    try:
+        desde, hasta = texto.split('-', 1)
+        return (dtime.fromisoformat(desde.strip()), dtime.fromisoformat(hasta.strip()))
+    except ValueError:
+        app.logger.warning("Horario mal escrito para el día %s: %r", dia_semana, texto)
+        return None
+
+
+def estado_horario(ahora=None):
+    """Dice si se pueden emitir turnos y por qué.
+
+    Deja de emitir unos minutos antes del cierre: un turno sacado a las 16:58
+    para un trámite de 20 minutos no se alcanza a atender y el socio espera
+    para nada.
+    """
+    if not app.config['HORARIO_ACTIVO']:
+        return {'abierto': True, 'emite': True, 'motivo': None,
+                'apertura': None, 'cierre': None}
+
+    ahora = ahora or datetime.now(LOCAL_TZ)
+    franja = _franja_del_dia(ahora.weekday())
+
+    if not franja:
+        return {'abierto': False, 'emite': False, 'motivo': 'cerrado_hoy',
+                'apertura': None, 'cierre': None, 'proximo': _proxima_apertura(ahora)}
+
+    apertura, cierre = franja
+    hora = ahora.time()
+    datos = {'apertura': apertura.strftime('%H:%M'),
+             'cierre': cierre.strftime('%H:%M')}
+
+    if hora < apertura:
+        return {**datos, 'abierto': False, 'emite': False, 'motivo': 'antes_de_abrir',
+                'proximo': f"hoy {apertura.strftime('%H:%M')}"}
+    if hora >= cierre:
+        return {**datos, 'abierto': False, 'emite': False, 'motivo': 'cerrado',
+                'proximo': _proxima_apertura(ahora)}
+
+    corte = (datetime.combine(ahora.date(), cierre)
+             - timedelta(minutes=app.config['CORTE_ANTES_DEL_CIERRE'])).time()
+    if hora >= corte:
+        return {**datos, 'abierto': True, 'emite': False, 'motivo': 'por_cerrar',
+                'proximo': _proxima_apertura(ahora)}
+
+    return {**datos, 'abierto': True, 'emite': True, 'motivo': None}
+
+
+def _proxima_apertura(ahora):
+    """Texto legible del próximo día y hora de atención."""
+    DIAS = ('lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo')
+    for adelanto in range(1, 8):
+        siguiente = ahora + timedelta(days=adelanto)
+        franja = _franja_del_dia(siguiente.weekday())
+        if franja:
+            cuando = 'mañana' if adelanto == 1 else DIAS[siguiente.weekday()]
+            return f"{cuando} {franja[0].strftime('%H:%M')}"
+    return None
+
+
+@app.route('/api/horario', methods=['GET'])
+def get_horario():
+    """Lo consulta el kiosco para saber si puede emitir turnos."""
+    return jsonify(estado_horario())
+
+
+# ==================== ALERTAS DE COLA ====================
+
+@app.route('/api/alertas', methods=['GET'])
+@login_required
+def get_alertas():
+    """Colas que superaron el umbral, para reaccionar antes de que se dispare."""
+    ahora = utcnow()
+    umbral_espera = app.config['ALERTA_ESPERA_MIN']
+    umbral_cola = app.config['ALERTA_COLA']
+
+    pendientes = filtro_dia(
+        Ticket.query.filter(Ticket.estado == Ticket.PENDIENTE)).all()
+
+    por_depto = {}
+    for t in pendientes:
+        d = por_depto.setdefault(t.departamento_id, {
+            'departamento': t.departamento.nombre if t.departamento else '—',
+            'color': t.departamento.color if t.departamento else '#94a3b8',
+            'en_espera': 0, '_esperas': []})
+        d['en_espera'] += 1
+        d['_esperas'].append((ahora - t.fecha_creacion).total_seconds() / 60)
+
+    colas = []
+    for dep_id, d in por_depto.items():
+        espera_max = round(max(d['_esperas']), 1) if d['_esperas'] else 0
+        motivos = []
+        if espera_max >= umbral_espera:
+            motivos.append('espera')
+        if d['en_espera'] >= umbral_cola:
+            motivos.append('cola')
+        colas.append({
+            'departamento_id': dep_id,
+            'departamento': d['departamento'],
+            'color': d['color'],
+            'en_espera': d['en_espera'],
+            'espera_maxima': espera_max,
+            'espera_promedio': round(sum(d['_esperas']) / len(d['_esperas']), 1),
+            'alerta': bool(motivos),
+            'motivos': motivos,
+        })
+
+    colas.sort(key=lambda c: (not c['alerta'], -c['espera_maxima']))
+    return jsonify({
+        'umbral_espera': umbral_espera,
+        'umbral_cola': umbral_cola,
+        'hay_alerta': any(c['alerta'] for c in colas),
+        'colas': colas,
+    })
+
+
 def orden_de_cola(query):
     """Ordena la cola: primero los preferenciales, después por hora de llegada.
 
@@ -361,6 +483,21 @@ def crear_ticket():
 
     if prioridad and prioridad not in Ticket.PRIORIDADES:
         return jsonify({'error': 'Motivo de preferencia inválido'}), 400
+
+    # El horario se valida en el servidor: si solo lo controlara el kiosco,
+    # bastaría con refrescar la pantalla para saltearlo.
+    horario = estado_horario()
+    if not horario['emite']:
+        mensajes = {
+            'cerrado_hoy': 'Hoy no hay atención.',
+            'antes_de_abrir': f"La atención comienza a las {horario.get('apertura')}.",
+            'cerrado': 'La atención del día ya terminó.',
+            'por_cerrar': 'Ya no se emiten turnos: estamos por cerrar.',
+        }
+        detalle = mensajes.get(horario['motivo'], 'Fuera del horario de atención.')
+        if horario.get('proximo'):
+            detalle += f" Lo esperamos {horario['proximo']}."
+        return jsonify({'error': detalle, 'fuera_de_horario': True}), 409
 
     departamento = db.session.get(Departamento, departamento_id) if departamento_id else None
     if not departamento:

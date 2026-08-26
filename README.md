@@ -64,6 +64,74 @@ Por privacidad, el endpoint público del kiosco devuelve únicamente nombre,
 apellido y N° de socio. Nunca el teléfono ni el email, y tampoco el documento:
 ese ya lo tiene el kiosco porque el socio lo acaba de tipear.
 
+## Cargar el padrón desde Excel
+
+```bash
+python importar_socios.py padron.xlsx              # muestra qué haría
+python importar_socios.py padron.xlsx --importar   # lo aplica
+python importar_socios.py padron.csv --importar --actualizar
+```
+
+Sin `--importar` no toca la base: muestra la vista previa y las filas con
+problemas. Con `--actualizar` refresca los datos de los socios que ya existen;
+sin esa opción se los saltea.
+
+Reconoce las columnas por su nombre, sin importar el orden ni las mayúsculas.
+Para la cédula acepta `dni`, `cedula`, `ci`, `documento`…; para el número de
+socio, `nro_socio`, `numero_socio`, `socio`, `codigo`… Lee `.xlsx` y `.csv`,
+incluido el CSV con `;` y acentos que genera Excel en español.
+
+Limpia los puntos de las cédulas (`2.500.812` → `2500812`) y descarta las filas
+sin cédula, con cédula muy corta, duplicadas o sin nombre, informando cuáles.
+Reimportar el mismo archivo no duplica nada.
+
+## Respaldos
+
+```bash
+python respaldar.py                    # respalda y verifica
+python respaldar.py --listar           # muestra los respaldos existentes
+python respaldar.py --restaurar tickets_2026-08-26_2300.db
+python respaldar.py --programar        # instrucciones de la tarea diaria
+```
+
+Después de copiar, **abre la copia**, comprueba su integridad y compara la
+cantidad de registros con el original: una copia corrupta se detecta esa misma
+noche, no el día que hace falta restaurarla.
+
+Van a `~/Respaldos/TIKETERA` (cambiable con `TIKETERA_CARPETA_RESPALDOS`), con
+retención de 30 días (`TIKETERA_DIAS_RESPALDO`). Usa la API de backup de
+SQLite, así que puede correr con el sistema atendiendo.
+
+Al restaurar, la base que se reemplaza se guarda como
+`tickets.db.antes_de_restaurar_<fecha>`, por si el respaldo elegido no era el
+correcto.
+
+## Alertas de cola
+
+El panel del operador avisa cuando una cola se dispara, para poder abrir otra
+ventanilla **antes** de que la espera sea un problema.
+
+| Variable | Default | Se dispara cuando |
+|---|---|---|
+| `TIKETERA_ALERTA_ESPERA` | `20` | alguien lleva esos minutos esperando |
+| `TIKETERA_ALERTA_COLA` | `10` | hay esa cantidad de personas en la cola |
+
+## Horario de atención
+
+Fuera del horario el kiosco muestra "Cerrado" con el próximo día de atención, y
+el servidor rechaza los turnos. Las dos cosas: si solo lo controlara el kiosco,
+bastaría refrescar la pantalla para saltearlo.
+
+```
+TIKETERA_HORARIO_LUN=07:00-17:00     (MAR, MIE, JUE, VIE, SAB, DOM)
+TIKETERA_CORTE_CIERRE=15             minutos antes del cierre en que deja de emitir
+TIKETERA_HORARIO_ACTIVO=0            apaga el control de horario
+```
+
+Un día vacío significa cerrado (por defecto, el domingo). El corte antes del
+cierre evita que alguien saque turno a las 16:58 para un trámite que no se va a
+alcanzar a atender.
+
 ## Usuarios y puestos
 
 Cada operador debe tener un **puesto** asignado: es el texto que el socio ve en
@@ -218,6 +286,8 @@ TIKETERA/
 ├── init_db.py                inicialización
 ├── migrar_db.py              migración de esquema (idempotente)
 ├── gestionar_usuarios.py     alta de usuarios y contraseñas
+├── importar_socios.py        carga el padrón desde Excel o CSV
+├── respaldar.py              respaldo, verificación y restauración
 ├── instalar_logo.py          instala el logo institucional
 ├── pruebas.py                pruebas funcionales de la API
 ├── pruebas_pantallas.py      render y permisos de cada página
@@ -238,6 +308,9 @@ TIKETERA/
 python pruebas.py            # API: permisos, numeración, atención en paralelo, privacidad
 python pruebas_pantallas.py  # que todas las páginas rendericen y respeten los roles
 python pruebas_dom.py        # que ningún JavaScript apunte a elementos inexistentes
+python pruebas_importar.py   # importación del padrón, con los errores típicos
+python pruebas_respaldo.py   # respaldo, verificación y restauración real
+python pruebas_alertas.py    # alertas de cola y horario de atención
 ```
 
 Las tres corren sobre bases de datos temporales, sin tocar los datos reales.
