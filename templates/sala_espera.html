@@ -309,6 +309,61 @@
             font-size: 1.5rem;
             opacity: 0.5;
         }
+
+        /* El navegador bloquea el audio hasta que alguien toca la pantalla.
+           Sin este aviso la TV se queda muda y nadie entiende por que. */
+        .activar-sonido {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 22, 15, 0.94);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 22px;
+            z-index: 2000;
+            cursor: pointer;
+        }
+
+        .activar-sonido.visible {
+            display: flex;
+        }
+
+        .activar-sonido__icono {
+            font-size: 6rem;
+            animation: latir-sonido 1.8s ease-in-out infinite;
+        }
+
+        @keyframes latir-sonido {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.12);
+            }
+        }
+
+        .activar-sonido__titulo {
+            font-size: 3rem;
+            font-weight: 900;
+        }
+
+        .activar-sonido__texto {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, .8);
+            max-width: 700px;
+            line-height: 1.45;
+        }
+
+        .activar-sonido__nota {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
     </style>
 </head>
 
@@ -317,7 +372,20 @@
     <div class="time-display" id="currentTime">--:--</div>
 
     <!-- Indicador de sonido -->
-    <div class="sound-indicator">🔊</div>
+    <div class="sound-indicator" id="indicadorSonido">🔊</div>
+
+    <!-- Aviso para desbloquear el audio (se cierra al primer toque) -->
+    <div class="activar-sonido" id="activarSonido">
+        <div class="activar-sonido__icono">🔇</div>
+        <div class="activar-sonido__titulo">Active el sonido</div>
+        <p class="activar-sonido__texto">
+            Toque la pantalla para que el sistema pueda anunciar los turnos por voz.
+        </p>
+        <p class="activar-sonido__nota">
+            El navegador exige un toque antes de reproducir audio.<br>
+            Se hace una sola vez, al encender el televisor.
+        </p>
+    </div>
 
     <div class="waiting-room">
         <!-- Header -->
@@ -637,10 +705,10 @@
                 container.style.display = 'block';
 
                 playNotificationSound();
-                nuevos.forEach((t, i) => {
-                    anunciados.add(t.id);
-                    setTimeout(() => speakTicket(t), i * 4000);
-                });
+                // La voz arranca cuando termina el doble beep; si hay varios
+                // turnos nuevos, la cola del navegador los encadena.
+                nuevos.forEach(t => anunciados.add(t.id));
+                setTimeout(() => nuevos.forEach(speakTicket), 900);
             }
         }
 
@@ -669,10 +737,67 @@
             `).join('');
         }
 
+        // ---------- Desbloqueo del audio ----------
+
+        // El navegador no deja reproducir sonido hasta que alguien interactua
+        // con la pagina. En un televisor que solo se enciende, eso significa
+        // que el sistema se queda mudo y nadie entiende por que. Se usa UN
+        // solo AudioContext para toda la pagina y se avisa en pantalla.
+        let contextoAudio = null;
+
+        function obtenerContexto() {
+            if (!contextoAudio) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (!AC) return null;
+                contextoAudio = new AC();
+            }
+            return contextoAudio;
+        }
+
+        function audioBloqueado() {
+            const ctx = obtenerContexto();
+            return !ctx || ctx.state === 'suspended';
+        }
+
+        function refrescarIndicador() {
+            const bloqueado = audioBloqueado();
+            document.getElementById('indicadorSonido').textContent = bloqueado ? '🔇' : '🔊';
+            document.getElementById('activarSonido')
+                .classList.toggle('visible', bloqueado);
+        }
+
+        async function desbloquearAudio() {
+            const ctx = obtenerContexto();
+            if (!ctx) return;
+            try {
+                await ctx.resume();
+            } catch (e) {
+                console.error('No se pudo activar el audio:', e);
+            }
+            if (ctx.state === 'running') {
+                // Un saludo corto confirma al operador que el sonido quedo activo
+                decir('Sonido activado');
+            }
+            refrescarIndicador();
+        }
+
+        for (const evento of ['click', 'touchstart', 'keydown']) {
+            document.addEventListener(evento, desbloquearAudio, { once: false });
+        }
+
+        // Se revisa al arrancar y cada tanto: el navegador puede volver a
+        // suspender el audio si la pestaña queda mucho tiempo en segundo plano
+        window.addEventListener('load', refrescarIndicador);
+        setInterval(refrescarIndicador, 5000);
+
         function playNotificationSound() {
             // Crear un beep usando Web Audio API
             try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const audioContext = obtenerContexto();
+                if (!audioContext || audioContext.state !== 'running') {
+                    refrescarIndicador();
+                    return;
+                }
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
 
@@ -706,23 +831,72 @@
             }
         }
 
-        function speakTicket(ticket) {
-            if ('speechSynthesis' in window) {
-                let mensaje = `Turno ${ticket.codigo_completo}, favor pasar a ${ticket.departamento.nombre}`;
-                if (ticket.puesto_atencion) {
-                    mensaje = `Turno ${ticket.codigo_completo}, favor pasar a ${ticket.puesto_atencion}`;
-                }
-                const utterance = new SpeechSynthesisUtterance(mensaje);
-                utterance.lang = 'es-ES';
-                utterance.rate = 0.9;
-                utterance.pitch = 1;
-                utterance.volume = 1;
+        // ---------- Voz ----------
 
-                // Esperar un momento para que el sonido termine
-                setTimeout(() => {
-                    speechSynthesis.speak(utterance);
-                }, 600);
+        // Las voces se cargan de forma asincronica: si se pide una antes de
+        // que esten listas, el navegador usa la que venga y puede leer en
+        // ingles. Por eso se elige recien cuando avisa 'voiceschanged'.
+        let vozElegida = null;
+
+        function elegirVoz() {
+            const voces = speechSynthesis.getVoices();
+            if (!voces.length) return;
+            // Preferencia: español de America antes que el de España, que
+            // suena ajeno para un socio paraguayo.
+            const orden = ['es-py', 'es-ar', 'es-419', 'es-mx', 'es-us', 'es-co', 'es-cl', 'es'];
+            for (const prefijo of orden) {
+                const v = voces.find(x => x.lang.toLowerCase().startsWith(prefijo));
+                if (v) { vozElegida = v; return; }
             }
+        }
+
+        elegirVoz();
+        if ('speechSynthesis' in window) {
+            speechSynthesis.onvoiceschanged = elegirVoz;
+        }
+
+        // "C-005" -> "C, 5"      (se lee "ce, cinco")
+        // "AH-012" -> "A H, 12"  (se lee "a hache, doce")
+        // Sin esto la voz dice "ce guion cero cero cinco", que no se entiende.
+        function codigoHablado(codigo) {
+            const partes = String(codigo || '').split('-');
+            const letras = (partes[0] || '').split('').join(' ');
+            const numero = parseInt(partes[1] || '0', 10) || 0;
+            return `${letras}, ${numero}`;
+        }
+
+        function textoDelAnuncio(ticket) {
+            const destino = ticket.puesto_atencion
+                || (ticket.departamento ? ticket.departamento.nombre : '');
+            const preferencial = ticket.prioridad_texto ? 'Atención preferencial. ' : '';
+            return `${preferencial}Turno ${codigoHablado(ticket.codigo_completo)}.`
+                + (destino ? ` Diríjase a ${destino}.` : '');
+        }
+
+        function decir(texto) {
+            if (!('speechSynthesis' in window)) return;
+            const u = new SpeechSynthesisUtterance(texto);
+            if (vozElegida) {
+                u.voice = vozElegida;
+                u.lang = vozElegida.lang;
+            } else {
+                u.lang = 'es-MX';
+            }
+            u.rate = 0.92;
+            u.pitch = 1;
+            u.volume = 1;
+            u.onerror = (e) => console.error('Error al hablar:', e.error);
+            // speechSynthesis mantiene su propia cola: si ya esta hablando,
+            // esta locucion espera su turno sola. No hace falta medir tiempos.
+            speechSynthesis.speak(u);
+        }
+
+        function speakTicket(ticket) {
+            const texto = textoDelAnuncio(ticket);
+            // Se anuncia dos veces, como en cualquier sala de espera: la
+            // primera muchas veces agarra al socio distraido.
+            decir(texto);
+            decir(texto);
         }
 
         // Iniciar carga de datos

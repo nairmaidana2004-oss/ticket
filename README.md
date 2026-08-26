@@ -209,6 +209,30 @@ Requiere sesión de operador:
 Requiere rol admin: el CRUD de `/api/socios`, `/api/usuarios`,
 `/api/departamentos` y `POST /api/tickets/reiniciar`.
 
+## Anuncio por voz
+
+Al llamar un turno, la TV suena y lo anuncia **dos veces**:
+
+> *"Turno ce, cinco. Diríjase a Ventanilla 1."*
+
+Los turnos preferenciales lo aclaran: *"Atención preferencial. Turno a hache, doce…"*
+
+El código se deletrea antes de dictarlo (`C-005` → "C, 5"). Sin eso la voz lee
+"ce guion cero cero cinco", que no se entiende. Se elige la mejor voz en
+español disponible, prefiriendo las de América (si el equipo tiene voz de
+Paraguay, usa esa) sobre la de España.
+
+### ⚠️ Hay que tocar la pantalla una vez
+
+Los navegadores **bloquean el audio** hasta que alguien interactúa con la
+página. En un televisor que solo se enciende, eso significa que el sistema se
+queda mudo sin avisar.
+
+Por eso la TV muestra **"Active el sonido"** al abrirse: se toca una vez, al
+encender el televisor, y queda andando para toda la jornada. El indicador de
+arriba a la izquierda muestra 🔇 cuando está bloqueado y 🔊 cuando está listo,
+y se revisa cada 5 segundos por si el navegador vuelve a suspenderlo.
+
 ## Avisos de la TV
 
 Se administran en `/admin/avisos` y tienen dos formas de mostrarse:
